@@ -25,6 +25,8 @@ const (
 	exitUsage   = 1 // bad flags, bad configuration, or an internal error
 	exitPartial = 2 // some nodes are unknown
 	exitNone    = 3 // every node is unknown
+	exitRefused = 4 // MQTT: refused, or failed before anything took effect
+	exitUnknown = 5 // MQTT: sent, but whether it took effect is unknown
 )
 
 // exitCode carries a non-zero exit that is not an error message:
@@ -35,12 +37,12 @@ func (c exitCode) Error() string { return fmt.Sprintf("exit %d", int(c)) }
 
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
-	code := run(ctx, os.Args[1:], os.Getenv, os.Stdout, os.Stderr)
+	code := run(ctx, os.Args[1:], os.Getenv, os.Stdin, os.Stdout, os.Stderr)
 	stop()
 	os.Exit(code)
 }
 
-func run(ctx context.Context, args []string, getenv func(string) string, stdout, stderr io.Writer) int {
+func run(ctx context.Context, args []string, getenv func(string) string, stdin io.Reader, stdout, stderr io.Writer) int {
 	root := &cobra.Command{
 		Use:           "straum-cli",
 		Short:         "A terminal client for a Straum cluster",
@@ -48,17 +50,22 @@ func run(ctx context.Context, args []string, getenv func(string) string, stdout,
 		SilenceErrors: true,
 	}
 	root.SetArgs(args)
+	root.SetIn(stdin)
 	root.SetOut(stdout)
 	root.SetErr(stderr)
-	root.AddCommand(versionCmd(), statusCmd(getenv))
+	root.AddCommand(versionCmd(), statusCmd(getenv), pubCmd(getenv), subCmd(getenv))
 
 	err := root.ExecuteContext(ctx)
 	var c exitCode
+	var f failure
 	switch {
 	case err == nil:
 		return exitOK
 	case errors.As(err, &c):
 		return int(c)
+	case errors.As(err, &f):
+		fmt.Fprintln(stderr, "straum-cli:", f.err)
+		return f.code
 	default:
 		fmt.Fprintln(stderr, "straum-cli:", err)
 		return exitUsage

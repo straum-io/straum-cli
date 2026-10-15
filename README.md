@@ -52,6 +52,41 @@ straum-cli: 127.0.0.1:9102: dial tcp 127.0.0.1:9102: connect: connection refused
 | `--timeout` | `2s` | How long to wait for each node. |
 | `-o, --output` | `table` | `table` or `json`. |
 
+### `pub` and `sub`
+
+Publish and subscribe over MQTT 5. These are ordinary client operations,
+allowed by core D-141 as amended. The broker address is the node's
+`STRAUM_CLUSTER_MQTT_LISTEN`. It comes from `--broker host:port`, or
+else from `STRAUM_CLI_BROKER`; there is no default.
+
+```console
+$ straum-cli pub --broker 127.0.0.1:1883 -t sensors/a -m 21.5            # QoS 1 by default
+$ straum-cli pub --broker 127.0.0.1:1883 -t sensors/a -m 21.5 -r         # set the retained message
+$ straum-cli pub --broker 127.0.0.1:1883 -t sensors/a -m '' -r           # clear it
+$ echo hello | straum-cli pub --broker 127.0.0.1:1883 -t greet --stdin
+$ straum-cli sub --broker 127.0.0.1:1883 -t 'sensors/+' -t 'logs/#' -v
+$ straum-cli sub --broker 127.0.0.1:1883 -t sensors/a -c 1 --wait 5s -o json
+```
+
+- **`pub` with QoS 1** (the default) succeeds only on a PUBACK. Straum
+  sends the PUBACK once a majority of the cluster has committed the
+  message.
+- **`pub` with QoS 0** succeeds once the message is written to the
+  connection, and nothing confirms it.
+- **QoS 2 is refused:** straum doesn't support it (D-138).
+- **Payload size:** at most 256 KiB, the core's packet limit.
+- **`sub` output:** each message goes to stdout. Plain mode prints the
+  payload (`-v` puts the topic first). `-o json` prints one
+  `{"topic","qos","retain","payload_base64"}` object per line; fields
+  are only ever added.
+- **When `sub` stops:** on Ctrl-C, after `--count` messages, or after
+  `--wait`. It then unsubscribes and disconnects.
+- **MQTT 5 options:** `--no-local`, `--retain-as-published` and
+  `--retain-handling 0|1|2`.
+- **Sessions are always clean.** Persistent sessions, wills and
+  expiry wait on the core's step 7c. Shared subscriptions and
+  subscription identifiers are refused by the core.
+
 ### `version`
 
 Prints the CLI's version, commit and Go version.
@@ -67,10 +102,12 @@ When both are set, the flag wins.
 
 | Code | Meaning |
 |---|---|
-| 0 | Every node observed |
+| 0 | Done: every node observed, the message published, or `sub` finished |
 | 1 | Usage or configuration error |
-| 2 | Some nodes unknown |
-| 3 | Every node unknown |
+| 2 | `status`: some nodes unknown. `sub`: `--wait` passed before `--count` messages arrived |
+| 3 | `status`: every node unknown |
+| 4 | `pub`/`sub`: refused by the node, or the connection failed before anything took effect |
+| 5 | `pub`: sent, but the outcome is unknown (no PUBACK in time, or the connection broke). The message may or may not be committed; publishing it again can deliver it twice |
 
 ## Security
 

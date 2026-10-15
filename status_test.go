@@ -54,7 +54,7 @@ func deadAddr(t *testing.T) string {
 func runCLI(t *testing.T, env map[string]string, args ...string) (code int, stdout, stderr string) {
 	t.Helper()
 	var out, errOut bytes.Buffer
-	code = run(context.Background(), args, func(k string) string { return env[k] }, &out, &errOut)
+	code = run(context.Background(), args, func(k string) string { return env[k] }, strings.NewReader(""), &out, &errOut)
 	return code, out.String(), errOut.String()
 }
 
@@ -160,7 +160,7 @@ func TestStatusCancelled(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	time.AfterFunc(50*time.Millisecond, cancel)
 	var out, errOut bytes.Buffer
-	code := run(ctx, []string{"status", "--node", strings.TrimPrefix(s.URL, "http://"), "--timeout", "10s"}, func(string) string { return "" }, &out, &errOut)
+	code := run(ctx, []string{"status", "--node", strings.TrimPrefix(s.URL, "http://"), "--timeout", "10s"}, func(string) string { return "" }, nil, &out, &errOut)
 	if code != exitNone {
 		t.Errorf("exit %d after cancel; stderr %q", code, errOut.String())
 	}
