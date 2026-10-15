@@ -1,0 +1,52 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: make check
+
+  # Against the core's main branch: the stable metrics the CLI relies on,
+  # the coverage matrix, and a real three-node cluster. The core is
+  # private: STRAUM_CORE_TOKEN is a read-only token for rubtsov-stan/straum.
+  core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: cli
+      - uses: actions/checkout@v4
+        with:
+          repository: rubtsov-stan/straum
+          token: ${{ secrets.STRAUM_CORE_TOKEN }}
+          path: straum
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: cli/go.mod
+          cache-dependency-path: cli/go.sum
+      - run: make drift-check
+        working-directory: cli
+      - run: make coverage-check
+        if: ${{ !cancelled() }}
+        working-directory: cli
+      - uses: dtolnay/rust-toolchain@stable
+        if: ${{ !cancelled() }}
+      - uses: Swatinem/rust-cache@v2
+        if: ${{ !cancelled() }}
+        with:
+          workspaces: straum
+      - run: make e2e
+        if: ${{ !cancelled() }}
+        working-directory: cli
