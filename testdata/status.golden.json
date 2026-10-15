@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-10-16T12:00:00Z",
+  "nodes": [
+    {
+      "address": "127.0.0.1:9100",
+      "state": "observed",
+      "observed_at": "2026-10-16T11:59:59.985Z",
+      "age_ms": 15,
+      "latency_ms": 3,
+      "metrics": {
+        "straum_applied": 5,
+        "straum_commit": 4,
+        "straum_lag": 8,
+        "straum_leading": 2,
+        "straum_log_durable": 7,
+        "straum_log_end": 6,
+        "straum_node": 0,
+        "straum_outbox_capacity": 10,
+        "straum_outbox_entries": 9,
+        "straum_serving": 3,
+        "straum_slot": 1
+      }
+    },
+    {
+      "address": "127.0.0.1:9101",
+      "state": "unknown",
+      "latency_ms": 2000,
+      "error": "no answer within 2s"
+    }
+  ]
+}

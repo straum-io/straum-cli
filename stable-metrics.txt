@@ -1,0 +1,11 @@
+straum_node
+straum_slot
+straum_leading
+straum_serving
+straum_commit
+straum_applied
+straum_log_end
+straum_log_durable
+straum_lag
+straum_outbox_entries
+straum_outbox_capacity
