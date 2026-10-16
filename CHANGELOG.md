@@ -33,3 +33,12 @@ schema has its own version (docs/status-json.md).
   tree and checked in CI.
 - Release builds with GoReleaser for linux, darwin and windows, each on
   amd64 and arm64.
+- `pub` and `sub` report the reason when the node disconnects them (for
+  example 0x8e, session taken over) and exit 4.
+
+### Changed
+
+- The coverage and drift checks read the core's declared client contract:
+  the stable-settings, stable-kinds, reserved-kinds, stable-reasons and
+  stable-metrics blocks of its `docs/configuration.md`, each pinned by a
+  test in the core. They no longer scan the core's Rust source.
