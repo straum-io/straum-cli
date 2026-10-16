@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/rubtsov-stan/straum-cli/metrics"
 	"github.com/spf13/cobra"
 )
 
@@ -128,7 +129,7 @@ Exit codes: 0 every node observed, 1 usage or configuration error,
 			seen := make(map[string]bool, len(nodes))
 			for i, n := range nodes {
 				n = strings.TrimSpace(n)
-				if err := checkAddress(n); err != nil {
+				if err := metrics.CheckAddress(n); err != nil {
 					return err
 				}
 				if seen[n] {
@@ -149,13 +150,17 @@ Exit codes: 0 every node observed, 1 usage or configuration error,
 				return fmt.Errorf("--output %q: want table or json", output)
 			}
 
-			r := collect(cmd.Context(), newHTTPClient(), nodes, timeout, time.Now)
+			mr, err := (&metrics.Client{Timeout: timeout}).Collect(cmd.Context(), nodes)
+			if err != nil {
+				return err // every check Collect makes was made above
+			}
+			r := report{SchemaVersion: schemaVersion, Report: mr}
 			if err := write(cmd.OutOrStdout(), r); err != nil {
 				return err
 			}
 			unknown := 0
 			for _, n := range r.Nodes {
-				if n.State == stateUnknown {
+				if n.State == metrics.Unknown {
 					unknown++
 					fmt.Fprintf(cmd.ErrOrStderr(), "straum-cli: %s: %s\n", n.Address, n.Error)
 				}

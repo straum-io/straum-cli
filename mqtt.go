@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/eclipse/paho.golang/paho"
+	"github.com/rubtsov-stan/straum-cli/metrics"
 	"github.com/spf13/cobra"
 )
 
@@ -55,7 +56,7 @@ func (m *mqttFlags) check(getenv func(string) string) error {
 	if m.broker == "" {
 		return errors.New("no broker: pass --broker host:port or set STRAUM_CLI_BROKER")
 	}
-	if err := checkAddress(m.broker); err != nil {
+	if err := metrics.CheckAddress(m.broker); err != nil {
 		return err
 	}
 	if m.timeout <= 0 {

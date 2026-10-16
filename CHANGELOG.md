@@ -33,6 +33,10 @@ schema has its own version (docs/status-json.md).
   tree and checked in CI.
 - Release builds with GoReleaser for linux, darwin and windows, each on
   amd64 and arm64.
+- The Go package `github.com/rubtsov-stan/straum-cli/metrics`: what
+  `status` reads, for other Go programs. It returns typed results
+  (`Report`, `Node`, `State`) and typed errors (`StatusError`,
+  `ContentError`). `status` now uses it; its output is unchanged.
 - `pub` and `sub` report the reason when the node disconnects them (for
   example 0x8e, session taken over) and exit 4.
 

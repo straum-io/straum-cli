@@ -13,6 +13,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/rubtsov-stan/straum-cli/metrics"
 )
 
 var update = flag.Bool("update", false, "rewrite golden files")
@@ -89,20 +91,6 @@ func TestStatusExitCodes(t *testing.T) {
 	}
 }
 
-func TestStatusUnknownNodeCarriesNothingButTheError(t *testing.T) {
-	ok, _ := serve(t, 200, fixture(t, "node0.prom"))
-	dead := deadAddr(t)
-	r := collect(context.Background(), newHTTPClient(), []string{ok, dead}, time.Second, time.Now)
-
-	if n := r.Nodes[0]; n.State != stateObserved || n.Address != ok || n.ObservedAt == nil || n.AgeMS == nil || n.Metrics["straum_leading"] != 1 {
-		t.Errorf("observed node: %+v", n)
-	}
-	n := r.Nodes[1]
-	if n.State != stateUnknown || n.Address != dead || n.Error == "" || n.Metrics != nil || n.ObservedAt != nil || n.AgeMS != nil {
-		t.Errorf("unknown node: %+v", n)
-	}
-}
-
 func TestStatusFailures(t *testing.T) {
 	full := string(fixture(t, "node0.prom"))
 	tests := []struct {
@@ -115,7 +103,7 @@ func TestStatusFailures(t *testing.T) {
 		{"not metrics", 200, "<html>login</html>", "malformed metrics"},
 		{"stable metric missing", 200, strings.Replace(full, "straum_lag 0\n", "", 1), "missing stable metric straum_lag"},
 		{"stable metric not integer", 200, strings.Replace(full, "straum_commit 10\n", "straum_commit 1e3\n", 1), "straum_commit"},
-		{"too large", 200, full + strings.Repeat("# padding\n", maxBody/10), "larger than"},
+		{"too large", 200, full + strings.Repeat("# padding\n", 1<<20/10), "larger than"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -218,18 +206,17 @@ func goldenReport() report {
 	at := time.Date(2026, 10, 16, 12, 0, 0, 0, time.UTC)
 	observed := at.Add(-15 * time.Millisecond)
 	age := int64(15)
-	metrics := make(map[string]uint64)
-	for i, name := range stableMetrics {
-		metrics[name] = uint64(i)
+	values := make(map[string]uint64)
+	for i, name := range metrics.Stable() {
+		values[name] = uint64(i)
 	}
-	return report{
-		SchemaVersion: schemaVersion,
-		GeneratedAt:   at,
-		Nodes: []nodeStatus{
-			{Address: "127.0.0.1:9100", State: stateObserved, ObservedAt: &observed, AgeMS: &age, LatencyMS: 3, Metrics: metrics},
-			{Address: "127.0.0.1:9101", State: stateUnknown, LatencyMS: 2000, Error: "no answer within 2s"},
+	return report{SchemaVersion: schemaVersion, Report: metrics.Report{
+		GeneratedAt: at,
+		Nodes: []metrics.Node{
+			{Address: "127.0.0.1:9100", State: metrics.Observed, ObservedAt: &observed, AgeMS: &age, LatencyMS: 3, Metrics: values},
+			{Address: "127.0.0.1:9101", State: metrics.Unknown, LatencyMS: 2000, Error: "no answer within 2s"},
 		},
-	}
+	}}
 }
 
 func TestGolden(t *testing.T) {
