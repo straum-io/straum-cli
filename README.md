@@ -91,6 +91,9 @@ $ straum-cli sub --broker 127.0.0.1:1883 -t sensors/a -c 1 --wait 5s -o json
 
 Prints the CLI's version, commit and Go version.
 
+The full reference for every command and flag is generated in
+[docs/commands](docs/commands/straum-cli.md).
+
 ## Configuration
 
 There is no default cluster and no config file. Nodes come from `--node`.
@@ -130,11 +133,23 @@ When both are set, the flag wins.
 | `make drift-check` | Fails if a metric in `stable-metrics.txt` is not in the core's stable set (`docs/configuration.md`, "Stable metrics"). |
 | `make coverage-check` | Fails if `docs/coverage.md` misses a core contract element, or has a row that is not done, verified, blocked or n/a. |
 | `make golden` | Rewrites the golden output files after an intended change. |
+| `make docs` | Regenerates the command reference in `docs/commands/`. `make test` fails while it is stale. |
+| `make release-snapshot` | Validates `.goreleaser.yaml` and builds every release archive into `dist/`, without publishing anything. |
 
 CI (`.github/workflows/ci.yml`) runs `make check`. It also runs the three
 core checks against the core's `main` branch. That job needs the
 `STRAUM_CORE_TOKEN` secret: a read-only token for the private core
 repository.
+
+## Releases
+
+- **Building:** pushing a `v*` tag runs `.github/workflows/release.yml`.
+  It runs `make check`, then GoReleaser builds archives for linux, darwin
+  and windows, each on amd64 and arm64, plus checksums.
+- **Publishing:** the build creates a **draft** GitHub release. A
+  maintainer reads it and publishes it.
+- **Release notes:** they come from `CHANGELOG.md`, which is written by
+  hand.
 
 When the core changes something listed in `docs/coverage.md`, update the
 matrix in the same change.
