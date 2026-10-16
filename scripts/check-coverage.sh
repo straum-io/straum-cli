@@ -1,14 +1,18 @@
 #!/bin/sh
-# Fails unless docs/coverage.md names every core contract element (in
-# backticks) and every matrix row is done, verified, blocked or n/a.
+# Fails unless docs/coverage.md names every element of the core's declared
+# client contract (in backticks) and every matrix row is done, verified,
+# blocked or n/a. The elements are the blocks of the core's
+# docs/configuration.md, each pinned by a test in the core: stable-settings,
+# stable-kinds, reserved-kinds and stable-reasons.
 # Usage: scripts/check-coverage.sh [path to straum core]
 set -eu
 core=${1:-../straum}
 matrix=docs/coverage.md
 here=$(dirname "$0")
 fail=0
-elements=$("$here/core-elements.sh" "$core")
-[ -n "$elements" ] || { echo "no core elements found under $core: did the core move them?" >&2; exit 1; }
+elements=$(for b in stable-settings stable-kinds reserved-kinds stable-reasons; do
+	"$here/core-block.sh" "$b" "$core" || exit 1
+done) || exit 1
 for e in $elements; do
 	if ! grep -qF "\`$e\`" "$matrix"; then
 		echo "$matrix: core element $e is not in the matrix" >&2

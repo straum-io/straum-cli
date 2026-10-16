@@ -4,14 +4,15 @@ What the Straum core can do, and which CLI command covers each part. This
 is the CLI's roadmap (D-141 A, amended to allow MQTT publish and
 subscribe).
 
-Taken from the core at `a70ce06` (2026-10-16): `crates/gateway/src/lib.rs`,
+Taken from the core at `0c5f007` (2026-10-16): `crates/gateway/src/lib.rs`,
 `crates/journal` (`Kind`), `crates/server/src/config.rs`,
 `crates/node/src/metrics.rs` and `docs/decisions`.
 
 The **Core elements** column is checked by `make coverage-check`
-(`scripts/check-coverage.sh`). The check reads every journal record kind,
-every reason code the gateway refuses with, and every `STRAUM_*` variable
-the server reads, and fails in two cases:
+(`scripts/check-coverage.sh`). The check reads the core's declared client
+contract: the blocks of its `docs/configuration.md`, each pinned by a test
+in the core. They hold the settings, the written and reserved journal
+kinds, and the reason codes the gateway sends. The check fails in two cases:
 - the matrix doesn't name one of those elements in backticks;
 - a row's Status is anything other than done, verified, blocked or n/a.
 
@@ -29,14 +30,16 @@ Status values:
 
 | Capability | Core surface | CLI command | Status | Core elements | Notes |
 |---|---|---|---|---|---|
-| Connect and disconnect over MQTT 5 (clean session, keep-alive) | `STRAUM_CLUSTER_MQTT_LISTEN` | `pub`, `sub` | verified | `Connect`, `Disconnect`, `Session`, `SessionGone`, `ServerUnavailable`, `ClientIdentifierNotValid` | The CLI always connects with a clean session |
+| Connect and disconnect over MQTT 5 (clean session, keep-alive) | `STRAUM_CLUSTER_MQTT_LISTEN` | `pub`, `sub` | verified | `Connect`, `Disconnect`, `Session`, `SessionGone`, `ServerUnavailable`, `ClientIdentifierNotValid`, `Success` | The CLI always connects with a clean session |
 | Publish QoS 0 | PUBLISH | `pub` | verified | `Publish` | |
 | Publish QoS 1, PUBACK after commit to a majority | PUBLISH/PUBACK (ADR-0005) | `pub` | verified | `Publish` | |
-| Receive QoS 1, acknowledged by the subscriber | PUBLISH/PUBACK | `sub` | verified | `Ack` | |
+| Receive QoS 1, acknowledged by the subscriber | PUBLISH/PUBACK | `sub` | verified | `Ack`, `GrantedQos1` | |
 | Subscribe, with `+` and `#` wildcards | SUBSCRIBE | `sub` | verified | `Subscribe` | |
 | MQTT 5 subscription options: no local, retain as published, retain handling | SUBSCRIBE | `sub` flags | verified | `Subscribe` | No local is accepted by the core, but its effect is not observable: it filters a connection's own publishes, and a `sub` connection never publishes |
 | Unsubscribe | UNSUBSCRIBE | `sub` sends it on exit | verified | `Unsubscribe` | |
 | Retained messages, set and clear | PUBLISH with retain set | `pub --retain`; an empty payload clears | verified | `Publish` | |
+| Disconnected by the node, with a reason (MQTT 5 DISCONNECT) | DISCONNECT; QuotaExceeded also in SUBACK | `pub`, `sub`: the reason on stderr, exit 4 | verified | `SessionTakenOver`, `KeepAliveTimeout`, `ServerBusy`, `QuotaExceeded` | Every reason takes the same path. The e2e test provokes `SessionTakenOver` (the same client id twice on one node) |
+| Protocol violations by a client | DISCONNECT | none | n/a | `ProtocolError`, `TopicAliasInvalid`, `ReceiveMaximumExceeded` | paho keeps to the protocol, so the CLI never provokes these. If one came, it would be reported like any other disconnect |
 | MQTT 3.1.1 | the same listener | none | n/a | | The CLI speaks MQTT 5 only (`eclipse/paho.golang`, its sole MQTT dependency), which covers every 3.1.1 operation. The core's 3.1.1 support stays available to other clients and is tested in the core (`rumqttc`) |
 | Topic aliases | per connection | none | n/a | | A one-shot client sends a topic once; an alias saves nothing |
 | Publish QoS 2 | refused | none | n/a | `QosNotSupported`, `QosTwoState` | Deferred past the first release (D-138 (4)) |

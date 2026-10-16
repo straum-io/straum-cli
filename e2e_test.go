@@ -304,3 +304,17 @@ func TestE2ERefusals(t *testing.T) {
 	c.procs[0].Wait()
 	pub(t, exitRefused, c.mqtt[0], "-t", "e2e/x", "-m", "x")
 }
+
+// The node disconnects a client with a reason: a second connection with
+// the same client id takes the session over (MQTT 5 0x8e).
+func TestE2EDisconnectedByTheNode(t *testing.T) {
+	c := startCluster(t)
+	pub(t, exitOK, c.mqtt[0], "-t", "e2e/marker", "-m", "ready", "-r")
+	first := startSub(t, c.mqtt[0], "e2e/marker", "--client-id", "e2e-dup")
+	if code, _, stderr := runCLI(t, nil, "sub", "--broker", c.mqtt[0], "--client-id", "e2e-dup", "-t", "e2e/x", "--wait", "500ms"); code != exitOK {
+		t.Fatalf("second sub: exit %d, %s", code, stderr)
+	}
+	if code, _ := first.wait(t); code != exitRefused || !strings.Contains(first.errOut.String(), "the node disconnected: reason 0x8e") {
+		t.Errorf("first sub: exit %d, stderr %q", code, first.errOut.String())
+	}
+}

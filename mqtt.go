@@ -323,13 +323,18 @@ messages arrived, 4 refused or the connection was lost.`,
 				}
 				mu.Unlock()
 			case d := <-serverGone:
-				var text string
-				if d.Properties != nil {
-					text = d.Properties.ReasonString
-				}
-				return refused("the node disconnected: %s", reason(d.ReasonCode, text))
+				return disconnected(d)
 			case <-c.Done():
-				return refused("connection lost")
+				// paho hands a DISCONNECT to OnServerDisconnect on its own
+				// goroutine, so the connection can read as closed first.
+				// ponytail: a fixed grace for the reason; the exit code is the
+				// same without it, only the message differs.
+				select {
+				case d := <-serverGone:
+					return disconnected(d)
+				case <-time.After(200 * time.Millisecond):
+					return refused("connection lost")
+				}
 			}
 			mu.Lock()
 			err = writeErr
@@ -358,4 +363,12 @@ messages arrived, 4 refused or the connection was lost.`,
 	f.StringVarP(&output, "output", "o", "plain", "plain or json")
 	f.BoolVarP(&verbose, "verbose", "v", false, "plain output: print the topic before the payload")
 	return cmd
+}
+
+func disconnected(d *paho.Disconnect) error {
+	var text string
+	if d.Properties != nil {
+		text = d.Properties.ReasonString
+	}
+	return refused("the node disconnected: %s", reason(d.ReasonCode, text))
 }
