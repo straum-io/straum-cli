@@ -30,7 +30,7 @@ Status values:
 
 | Capability | Core surface | CLI command | Status | Core elements | Notes |
 |---|---|---|---|---|---|
-| Connect and disconnect over MQTT 5 (clean session, keep-alive) | `STRAUM_CLUSTER_MQTT_LISTEN` | `pub`, `sub` | verified | `Connect`, `Disconnect`, `Session`, `SessionGone`, `ServerUnavailable`, `ClientIdentifierNotValid`, `Success` | The CLI always connects with a clean session |
+| Connect and disconnect over MQTT 5 (clean session, keep-alive) | `STRAUM_CLUSTER_MQTT_LISTEN` | `pub`, `sub` | verified | `SessionGone`, `ServerUnavailable`, `ClientIdentifierNotValid`, `Success` | The CLI always connects with a clean session. A clean session writes no `Session`, `Connect` or `Disconnect` record: those kinds wait on 7c (see "Persistent sessions and wills") |
 | Publish QoS 0 | PUBLISH | `pub` | verified | `Publish` | |
 | Publish QoS 1, PUBACK after commit to a majority | PUBLISH/PUBACK (ADR-0005) | `pub` | verified | `Publish` | |
 | Receive QoS 1, acknowledged by the subscriber | PUBLISH/PUBACK | `sub` | verified | `Ack`, `GrantedQos1` | |
@@ -45,7 +45,7 @@ Status values:
 | Publish QoS 2 | refused | none | n/a | `QosNotSupported`, `QosTwoState` | Deferred past the first release (D-138 (4)) |
 | Shared subscriptions | refused; CONNACK says they are unavailable | none | n/a | `SharedSubscriptionsNotSupported`, `SharedAssignment` | D-138 (4) |
 | Subscription identifiers | refused | none | n/a | `SubscriptionIdentifiersNotSupported` | |
-| Persistent sessions and wills | refused at CONNECT | `sub --session`, `--will-*` | blocked | `ImplementationSpecificError`, `WillPublished` | Core step 7c |
+| Persistent sessions and wills | refused at CONNECT | `sub --session`, `--will-*` | blocked | `ImplementationSpecificError`, `WillPublished`, `Session`, `Connect`, `Disconnect` | Core step 7c (D-143). The core declares `Session`, `Connect` and `Disconnect` stable, but `apply` refuses them as not yet built; a pending core card moves them to the reserved kinds |
 | Session expiry and message expiry | refused, or not carried through the log | flags | blocked | `SessionExpired`, `MessageExpired` | 7c, D-65 |
 | Credentials, TLS, enhanced authentication | refused; `auth` crate not wired | `--username`, `--tls-*` | blocked | `BadAuthenticationMethod` | D-110 |
 
