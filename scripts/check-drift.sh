@@ -1,5 +1,5 @@
 #!/bin/sh
-# Fails if a metric the CLI relies on (stable-metrics.txt) is not in the
+# Fails if a metric the CLI relies on (metrics/stable-metrics.txt) is not in the
 # core's stable set (docs/configuration.md, the stable-metrics block,
 # pinned by a test in the core's node crate). A stable name the CLI does
 # not use yet is reported, not failed.
@@ -9,7 +9,7 @@ core=${1:-../straum}
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 "$(dirname "$0")/core-block.sh" stable-metrics "$core" | sort >"$tmp/core"
-sort stable-metrics.txt >"$tmp/cli"
+sort metrics/stable-metrics.txt >"$tmp/cli"
 missing=$(comm -23 "$tmp/cli" "$tmp/core")
 unused=$(comm -13 "$tmp/cli" "$tmp/core")
 [ -z "$unused" ] || echo "stable in the core, not used by the CLI: $unused"

@@ -1,4 +1,4 @@
-package main
+package metrics
 
 import (
 	"os"
@@ -10,7 +10,7 @@ import (
 // a70ce06, debug build, idle after election).
 func TestParseRealNodeOutput(t *testing.T) {
 	for i, want := range []string{"0", "1", "2"} {
-		f, err := os.Open("testdata/node" + want + ".prom")
+		f, err := os.Open("../testdata/node" + want + ".prom")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -22,7 +22,7 @@ func TestParseRealNodeOutput(t *testing.T) {
 		if samples["straum_node"] != want {
 			t.Errorf("node%d: straum_node = %q", i, samples["straum_node"])
 		}
-		for _, name := range stableMetrics {
+		for _, name := range stable {
 			if _, ok := samples[name]; !ok {
 				t.Errorf("node%d: %s missing", i, name)
 			}

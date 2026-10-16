@@ -94,6 +94,35 @@ Prints the CLI's version, commit and Go version.
 The full reference for every command and flag is generated in
 [docs/commands](docs/commands/straum-cli.md).
 
+## Go library
+
+`status` is built on the package
+`github.com/rubtsov-stan/straum-cli/metrics`, which other Go programs can
+import. It reads the stable metrics and nothing else. It makes the same
+single request per node, never retries and draws no health verdict.
+
+```go
+c := metrics.Client{Timeout: 2 * time.Second} // HTTP nil: no proxy, no redirects, no idle connections
+r, err := c.Collect(ctx, []string{"127.0.0.1:9100", "127.0.0.1:9101"})
+if err != nil { /* a bad address or a negative timeout; nothing was sent */ }
+for _, n := range r.Nodes {
+	if n.State == metrics.Unknown {
+		// n.Err: a network error, *metrics.StatusError, *metrics.ContentError,
+		// context.DeadlineExceeded (Timeout) or context.Canceled (ctx)
+		continue
+	}
+	fmt.Println(n.Address, n.Metrics["straum_commit"])
+}
+```
+
+- **`metrics.Stable()`** lists the metric names. Each is a `uint64`.
+- **MQTT is not wrapped.** `pub` and `sub` use
+  [paho.golang](https://github.com/eclipse/paho.golang) directly, and so
+  can other programs.
+- **Not provided:** an admin API, authentication and TLS, the same as for
+  the CLI.
+- **Before 1.0,** the package's API may change in a minor version.
+
 ## Configuration
 
 There is no default cluster and no config file. Nodes come from `--node`.
@@ -130,7 +159,7 @@ When both are set, the flag wins.
 |---|---|
 | `make check` | gofmt, `go vet`, unit tests with `-race`, cross builds. Needs nothing else. |
 | `make e2e` | Builds `straum-server` from `../straum` (override with `CORE=`) and runs the CLI against a real three-node cluster on loopback. Needs Rust. |
-| `make drift-check` | Fails if a metric in `stable-metrics.txt` is not in the core's stable set (`docs/configuration.md`, "Stable metrics"). |
+| `make drift-check` | Fails if a metric in `metrics/stable-metrics.txt` is not in the core's stable set (`docs/configuration.md`, "Stable metrics"). |
 | `make coverage-check` | Fails if `docs/coverage.md` misses a core contract element, or has a row that is not done, verified, blocked or n/a. |
 | `make golden` | Rewrites the golden output files after an intended change. |
 | `make docs` | Regenerates the command reference in `docs/commands/`. `make test` fails while it is stale. |

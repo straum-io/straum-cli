@@ -14,6 +14,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/rubtsov-stan/straum-cli/metrics"
 )
 
 type cluster struct {
@@ -99,7 +101,7 @@ func TestE2EStatus(t *testing.T) {
 	c.procs[2].Process.Kill()
 	c.procs[2].Wait()
 	code, r := c.status(t)
-	if code != exitPartial || r.Nodes[2].State != stateUnknown || r.Nodes[0].State != stateObserved || r.Nodes[1].State != stateObserved {
+	if code != exitPartial || r.Nodes[2].State != metrics.Unknown || r.Nodes[0].State != metrics.Observed || r.Nodes[1].State != metrics.Observed {
 		t.Fatalf("one down: exit %d, %+v", code, r)
 	}
 
