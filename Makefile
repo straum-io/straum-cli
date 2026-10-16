@@ -4,7 +4,7 @@ VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 LDFLAGS := -s -w -X main.version=$(VERSION)
 PLATFORMS := linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64
 
-.PHONY: build test lint check cross e2e drift-check coverage-check golden clean
+.PHONY: build test lint check cross e2e drift-check coverage-check golden clean docs release-snapshot
 
 build:
 	CGO_ENABLED=0 go build -ldflags '$(LDFLAGS)' -o bin/straum-cli .
@@ -44,3 +44,15 @@ golden:
 
 clean:
 	rm -rf bin dist
+
+# Rewrite docs/commands after a change to commands, flags or help text.
+docs:
+	go test -run TestCommandDocs -update .
+
+GORELEASER := go run github.com/goreleaser/goreleaser/v2@v2.18.3
+
+# Check .goreleaser.yaml and build every release archive locally, without
+# publishing anything.
+release-snapshot:
+	$(GORELEASER) check
+	$(GORELEASER) release --snapshot --clean

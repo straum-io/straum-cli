@@ -42,19 +42,24 @@ func main() {
 	os.Exit(code)
 }
 
-func run(ctx context.Context, args []string, getenv func(string) string, stdin io.Reader, stdout, stderr io.Writer) int {
+// newRoot builds the command tree; docs/commands is generated from it.
+func newRoot(getenv func(string) string) *cobra.Command {
 	root := &cobra.Command{
 		Use:           "straum-cli",
 		Short:         "A terminal client for a Straum cluster",
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
+	root.AddCommand(versionCmd(), statusCmd(getenv), pubCmd(getenv), subCmd(getenv))
+	return root
+}
+
+func run(ctx context.Context, args []string, getenv func(string) string, stdin io.Reader, stdout, stderr io.Writer) int {
+	root := newRoot(getenv)
 	root.SetArgs(args)
 	root.SetIn(stdin)
 	root.SetOut(stdout)
 	root.SetErr(stderr)
-	root.AddCommand(versionCmd(), statusCmd(getenv), pubCmd(getenv), subCmd(getenv))
-
 	err := root.ExecuteContext(ctx)
 	var c exitCode
 	var f failure
