@@ -328,7 +328,7 @@ messages arrived, 4 refused or the connection was lost.`,
 			case <-c.Done():
 				// paho hands a DISCONNECT to OnServerDisconnect on its own
 				// goroutine, so the connection can read as closed first.
-				// ponytail: a fixed grace for the reason; the exit code is the
+				// A fixed grace for the reason; the exit code is the
 				// same without it, only the message differs.
 				select {
 				case d := <-serverGone:
