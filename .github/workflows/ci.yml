@@ -19,8 +19,8 @@ jobs:
       - run: make check
 
   # Against the core's main branch: the stable metrics the CLI relies on,
-  # the coverage matrix, and a real three-node cluster. The core is
-  # private: STRAUM_CORE_TOKEN is a read-only token for rubtsov-stan/straum.
+  # the coverage matrix, and a real three-node cluster. The core is public,
+  # so the checkout needs no token.
   core:
     runs-on: ubuntu-latest
     steps:
@@ -29,8 +29,7 @@ jobs:
           path: cli
       - uses: actions/checkout@v4
         with:
-          repository: rubtsov-stan/straum
-          token: ${{ secrets.STRAUM_CORE_TOKEN }}
+          repository: straum-io/straum
           path: straum
       - uses: actions/setup-go@v5
         with:
