@@ -1,4 +1,4 @@
-module github.com/rubtsov-stan/straum-cli
+module github.com/straum-io/straum-cli
 
 go 1.26.5
 

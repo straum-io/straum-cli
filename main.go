@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rubtsov-stan/straum-cli/metrics"
 	"github.com/spf13/cobra"
+	"github.com/straum-io/straum-cli/metrics"
 )
 
 // Set at release: -ldflags "-X main.version=v0.1.0".

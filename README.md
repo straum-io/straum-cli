@@ -1,6 +1,6 @@
 # straum-cli
 
-A terminal client for [Straum](https://github.com/rubtsov-stan/straum), a
+A terminal client for [Straum](https://github.com/straum-io/straum), a
 replicated MQTT broker. It is for operators, developers and scripts.
 
 The Straum core is **experimental and not production-ready**, and so is
@@ -10,7 +10,7 @@ covers, and what waits on the core, is in [docs/coverage.md](docs/coverage.md).
 ## Install
 
 ```sh
-go install github.com/rubtsov-stan/straum-cli@latest
+go install github.com/straum-io/straum-cli@latest
 # or, from a checkout:
 make build     # bin/straum-cli
 make cross     # dist/: linux, darwin and windows, each amd64 and arm64
@@ -97,7 +97,7 @@ The full reference for every command and flag is generated in
 ## Go library
 
 `status` is built on the package
-`github.com/rubtsov-stan/straum-cli/metrics`, which other Go programs can
+`github.com/straum-io/straum-cli/metrics`, which other Go programs can
 import. It reads the stable metrics and nothing else. It makes the same
 single request per node, never retries and draws no health verdict.
 

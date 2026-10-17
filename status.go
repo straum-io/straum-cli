@@ -7,7 +7,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/rubtsov-stan/straum-cli/metrics"
+	"github.com/straum-io/straum-cli/metrics"
 )
 
 // schemaVersion is the version of the JSON document `status -o json`

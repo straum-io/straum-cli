@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rubtsov-stan/straum-cli/metrics"
+	"github.com/straum-io/straum-cli/metrics"
 )
 
 var update = flag.Bool("update", false, "rewrite golden files")
