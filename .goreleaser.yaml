@@ -31,5 +31,5 @@ changelog:
 release:
   draft: true
   footer: |
-    See [CHANGELOG.md](https://github.com/rubtsov-stan/straum-cli/blob/{{ .Tag }}/CHANGELOG.md).
+    See [CHANGELOG.md](https://github.com/straum-io/straum-cli/blob/{{ .Tag }}/CHANGELOG.md).
     Straum is experimental and not production-ready, and so is this CLI.

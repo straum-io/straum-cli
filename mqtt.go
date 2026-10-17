@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/eclipse/paho.golang/paho"
-	"github.com/rubtsov-stan/straum-cli/metrics"
 	"github.com/spf13/cobra"
+	"github.com/straum-io/straum-cli/metrics"
 )
 
 // The core's largest MQTT packet (node::experimental, 256 KiB); a bigger
