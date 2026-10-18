@@ -17,6 +17,8 @@ jobs:
         with:
           go-version-file: go.mod
       - run: make check
+      - name: Coverage (statements, not gated)
+        run: make cover | tee -a "$GITHUB_STEP_SUMMARY"
 
   # Against the core's main branch: the stable metrics the CLI relies on,
   # the coverage matrix, and a real three-node cluster. The core is public,
