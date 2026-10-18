@@ -4,13 +4,18 @@ VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 LDFLAGS := -s -w -X main.version=$(VERSION)
 PLATFORMS := linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64
 
-.PHONY: build test lint check cross e2e drift-check coverage-check golden clean docs release-snapshot
+.PHONY: build test cover lint check cross e2e drift-check coverage-check golden clean docs release-snapshot
 
 build:
 	CGO_ENABLED=0 go build -ldflags '$(LDFLAGS)' -o bin/straum-cli .
 
 test:
 	go test -race ./...
+
+# Statement coverage (go test -coverprofile), reported, not gated (ECO-D-7).
+cover:
+	go test -race -coverprofile=coverage.out ./...
+	go tool cover -func=coverage.out | tail -1
 
 lint:
 	@test -z "$$(gofmt -l .)" || { gofmt -l .; echo 'gofmt: files above need formatting' >&2; exit 1; }
