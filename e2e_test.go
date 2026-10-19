@@ -51,6 +51,7 @@ func startCluster(t *testing.T) *cluster {
 			"STRAUM_CLUSTER_METRICS_LISTEN=" + c.metrics[i],
 			fmt.Sprintf("STRAUM_CLUSTER_DATA_DIR=%s/n%d", data, i),
 			"STRAUM_LOG_LEVEL=warn",
+			"NO_COLOR=1",
 		}
 		// Each node's log goes to a file, printed if the test fails: a node
 		// that dies or answers EOF is diagnosable from CI (straum#13).
@@ -59,10 +60,13 @@ func startCluster(t *testing.T) *cluster {
 		if err != nil {
 			t.Fatal(err)
 		}
-		cmd.Stderr = log
+		// The server logs to stdout; configuration errors and panics go to
+		// stderr. Both land in the file.
+		var out io.Writer = log
 		if testing.Verbose() {
-			cmd.Stderr = io.MultiWriter(log, os.Stderr)
+			out = io.MultiWriter(log, os.Stderr)
 		}
+		cmd.Stdout, cmd.Stderr = out, out
 		// Registered before the kill below, so it runs after it: the log
 		// is complete when printed.
 		t.Cleanup(func() {
