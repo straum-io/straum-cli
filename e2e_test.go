@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"slices"
@@ -50,10 +51,32 @@ func startCluster(t *testing.T) *cluster {
 			"STRAUM_CLUSTER_METRICS_LISTEN=" + c.metrics[i],
 			fmt.Sprintf("STRAUM_CLUSTER_DATA_DIR=%s/n%d", data, i),
 			"STRAUM_LOG_LEVEL=warn",
+			"NO_COLOR=1",
 		}
+		// Each node's log goes to a file, printed if the test fails: a node
+		// that dies or answers EOF is diagnosable from CI (straum#13).
+		logPath := fmt.Sprintf("%s/n%d.log", data, i)
+		log, err := os.Create(logPath)
+		if err != nil {
+			t.Fatal(err)
+		}
+		// The server logs to stdout; configuration errors and panics go to
+		// stderr. Both land in the file.
+		var out io.Writer = log
 		if testing.Verbose() {
-			cmd.Stderr = os.Stderr
+			out = io.MultiWriter(log, os.Stderr)
 		}
+		cmd.Stdout, cmd.Stderr = out, out
+		// Registered before the kill below, so it runs after it: the log
+		// is complete when printed.
+		t.Cleanup(func() {
+			log.Close()
+			if t.Failed() {
+				if b, err := os.ReadFile(logPath); err == nil {
+					t.Logf("node %d log:\n%s", i, b)
+				}
+			}
+		})
 		if err := cmd.Start(); err != nil {
 			t.Fatal(err)
 		}
