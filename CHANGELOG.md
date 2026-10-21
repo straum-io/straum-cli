@@ -37,6 +37,9 @@ schema has its own version (docs/status-json.md).
   `status` reads, for other Go programs. It returns typed results
   (`Report`, `Node`, `State`) and typed errors (`StatusError`,
   `ContentError`). `status` now uses it; its output is unchanged.
+- The exported API of `metrics` is listed in
+  `testdata/metrics-api.golden`, and `make check` fails when the API
+  differs from it; `make golden` rewrites it after an intended change.
 - `pub` and `sub` report the reason when the node disconnects them (for
   example 0x8e, session taken over) and exit 4.
 
