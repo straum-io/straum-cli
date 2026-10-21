@@ -2,11 +2,15 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net"
+	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -39,6 +43,15 @@ type mqttFlags struct {
 	clientID  string
 	keepAlive time.Duration
 	timeout   time.Duration
+	// Credentials (core D-158 A) and TLS (core D-164 A). The password
+	// never comes from a flag, so it is in no process list or history.
+	username      string
+	passwordFile  string
+	password      []byte
+	useTLS        bool
+	tlsCA         string
+	tlsServerName string
+	tlsConfig     *tls.Config
 }
 
 func (m *mqttFlags) register(cmd *cobra.Command) {
@@ -47,6 +60,19 @@ func (m *mqttFlags) register(cmd *cobra.Command) {
 	f.StringVar(&m.clientID, "client-id", "", "the MQTT client id; empty lets the node assign one")
 	f.DurationVar(&m.keepAlive, "keep-alive", 30*time.Second, "MQTT keep-alive, whole seconds, at most 65535s")
 	f.DurationVar(&m.timeout, "timeout", 10*time.Second, "how long to wait for the node at each step: connect, PUBACK, SUBACK")
+	f.StringVar(&m.username, "username", "", "the MQTT user name (STRAUM_AUTH_PASSWORD_FILE on the node); or set STRAUM_CLI_USERNAME")
+	f.StringVar(&m.passwordFile, "password-file", "", "a file whose first line is the password; or set STRAUM_CLI_PASSWORD")
+	f.BoolVar(&m.useTLS, "tls", false, "connect with TLS (STRAUM_TLS_CERT_PATH on the node)")
+	f.StringVar(&m.tlsCA, "tls-ca", "", "a PEM file of the CA certificates to trust instead of the system's; implies --tls")
+	f.StringVar(&m.tlsServerName, "tls-server-name", "", "the name to check the node's certificate against; default the --broker host; implies --tls")
+}
+
+func isLoopback(host string) bool {
+	if host == "localhost" {
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
 }
 
 func (m *mqttFlags) check(getenv func(string) string) error {
@@ -65,6 +91,53 @@ func (m *mqttFlags) check(getenv func(string) string) error {
 	if m.keepAlive < 0 || m.keepAlive > 65535*time.Second || m.keepAlive%time.Second != 0 {
 		return errors.New("--keep-alive must be whole seconds, 0s to 65535s")
 	}
+	if m.username == "" {
+		m.username = getenv("STRAUM_CLI_USERNAME")
+	}
+	switch {
+	case m.passwordFile != "":
+		b, err := os.ReadFile(m.passwordFile)
+		if err != nil {
+			return fmt.Errorf("--password-file: %w", err)
+		}
+		line, _, _ := strings.Cut(string(b), "\n")
+		m.password = []byte(strings.TrimSuffix(line, "\r"))
+		if len(m.password) == 0 {
+			return fmt.Errorf("--password-file %s: the first line is empty", m.passwordFile)
+		}
+	case getenv("STRAUM_CLI_PASSWORD") != "":
+		m.password = []byte(getenv("STRAUM_CLI_PASSWORD"))
+	}
+	if m.password != nil && m.username == "" {
+		return errors.New("a password needs a user name: --username or STRAUM_CLI_USERNAME")
+	}
+	host, _, _ := net.SplitHostPort(m.broker)
+	if m.tlsCA != "" || m.tlsServerName != "" {
+		m.useTLS = true
+	}
+	// The core lets its MQTT listener leave loopback only with TLS when it
+	// checks credentials (D-164 A): a password never crosses a network in
+	// clear text from here either.
+	if m.password != nil && !m.useTLS && !isLoopback(host) {
+		return fmt.Errorf("a password to %s would cross the network in clear text: add --tls", m.broker)
+	}
+	if m.useTLS {
+		m.tlsConfig = &tls.Config{MinVersion: tls.VersionTLS12, ServerName: host}
+		if m.tlsServerName != "" {
+			m.tlsConfig.ServerName = m.tlsServerName
+		}
+		if m.tlsCA != "" {
+			pem, err := os.ReadFile(m.tlsCA)
+			if err != nil {
+				return fmt.Errorf("--tls-ca: %w", err)
+			}
+			pool := x509.NewCertPool()
+			if !pool.AppendCertsFromPEM(pem) {
+				return fmt.Errorf("--tls-ca %s: no PEM certificate in it", m.tlsCA)
+			}
+			m.tlsConfig.RootCAs = pool
+		}
+	}
 	return nil
 }
 
@@ -73,18 +146,31 @@ func (m *mqttFlags) check(getenv func(string) string) error {
 func (m *mqttFlags) connect(ctx context.Context, conf paho.ClientConfig) (*paho.Client, error) {
 	ctx, cancel := context.WithTimeout(ctx, m.timeout)
 	defer cancel()
-	conn, err := (&net.Dialer{}).DialContext(ctx, "tcp", m.broker)
+	var conn net.Conn
+	var err error
+	if m.tlsConfig != nil {
+		conn, err = (&tls.Dialer{Config: m.tlsConfig}).DialContext(ctx, "tcp", m.broker)
+	} else {
+		conn, err = (&net.Dialer{}).DialContext(ctx, "tcp", m.broker)
+	}
 	if err != nil {
 		return nil, refused("%w", err)
 	}
 	conf.Conn = conn
 	conf.ClientID = m.clientID
 	c := paho.NewClient(conf)
-	ack, err := c.Connect(ctx, &paho.Connect{
+	cp := &paho.Connect{
 		ClientID:   m.clientID,
 		KeepAlive:  uint16(m.keepAlive / time.Second),
 		CleanStart: true,
-	})
+	}
+	if m.username != "" {
+		cp.Username, cp.UsernameFlag = m.username, true
+	}
+	if m.password != nil {
+		cp.Password, cp.PasswordFlag = m.password, true
+	}
+	ack, err := c.Connect(ctx, cp)
 	if err != nil {
 		conn.Close()
 		if ack != nil && ack.ReasonCode >= 0x80 {
@@ -99,11 +185,23 @@ func (m *mqttFlags) connect(ctx context.Context, conf paho.ClientConfig) (*paho.
 	return c, nil
 }
 
+// reasonNames are the refusals a person meets most, named as the core's
+// stable reason codes are (docs/coverage.md).
+var reasonNames = map[byte]string{
+	0x86: "bad user name or password", // BadUserNameOrPassword
+	0x87: "not authorized",            // NotAuthorized
+	0x8c: "bad authentication method", // BadAuthenticationMethod
+}
+
 func reason(code byte, text string) string {
-	if text != "" {
-		return fmt.Sprintf("reason 0x%02x: %s", code, text)
+	name := fmt.Sprintf("reason 0x%02x", code)
+	if n, ok := reasonNames[code]; ok {
+		name += " (" + n + ")"
 	}
-	return fmt.Sprintf("reason 0x%02x", code)
+	if text != "" {
+		return name + ": " + text
+	}
+	return name
 }
 
 func qosFlag(qos int) error {
