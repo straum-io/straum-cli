@@ -116,6 +116,34 @@ If `--node` isn't given, they come from `STRAUM_CLI_NODES`
 (comma-separated `host:port`). If neither is set, the command fails.
 When both are set, the flag wins.
 
+For `pub` and `sub` against a node that checks credentials
+(`STRAUM_AUTH_PASSWORD_FILE`, core D-158 A) and speaks TLS
+(`STRAUM_TLS_CERT_PATH`, core D-164 A):
+
+```sh
+STRAUM_CLI_PASSWORD=… straum-cli pub --broker node-a:8883 --tls-ca ca.pem \
+  --username alice -t sensors/a -m 21.5
+```
+
+- **User name:** `--username`, or `STRAUM_CLI_USERNAME`.
+- **Password:** `STRAUM_CLI_PASSWORD`, or the first line of
+  `--password-file`, which wins when both are set and may not be empty.
+  There is no password flag, so it never shows in a process list or the
+  shell history. The node's password file takes hashes from
+  `straum-server hash-password`, which reads the password on stdin.
+- **TLS:** `--tls` checks the node's certificate against the system's CAs;
+  `--tls-ca` trusts the CAs in a PEM file instead (and implies `--tls`);
+  `--tls-server-name` sets the name to check, by default the `--broker`
+  host (and also implies `--tls`). TLS 1.2 at least; the certificate is
+  always checked.
+- **No password in clear text:** a password to an address beyond loopback
+  needs TLS, or the command stops before connecting, as the core lets
+  its MQTT listener leave loopback only with TLS.
+- A refusal names the reason: "bad user name or password", "not
+  authorized" (a topic rule, or an anonymous client the node does not let
+  in). Under a topic rule the node drops a refused QoS 0 publish without
+  a refusal, so `pub` exits 0; use `-q 1` to learn the outcome.
+
 ## Exit codes
 
 | Code | Meaning |
@@ -136,8 +164,10 @@ When both are set, the flag wins.
   the CLI on the nodes' host, or over a network you trust.
 - **No proxy, no redirects:** the CLI never uses an HTTP proxy for these
   requests and doesn't follow redirects.
+- **MQTT credentials and TLS** follow the core's (D-158 A, D-164 A); see
+  Configuration. The metrics endpoint has neither.
 - **Out of scope until the core supports them** (core D-110, D-141):
-  authentication, TLS and administrative operations.
+  client certificates and administrative operations.
 
 ## Development
 

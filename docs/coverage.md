@@ -2,9 +2,10 @@
 
 What the Straum core can do, and which CLI command covers each part. This
 is the CLI's roadmap (D-141 A, amended to allow MQTT publish and
-subscribe).
+subscribe; the core's D-158 A and D-164 A supplied the credentials and TLS
+that D-141 kept out until they existed).
 
-Taken from the core at `0c5f007` (2026-10-16): `crates/gateway/src/lib.rs`,
+Taken from the core at `0c5f007` (2026-10-16), credentials and TLS at `4e78fc2` (2026-10-21): `crates/gateway/src/lib.rs`,
 `crates/journal` (`Kind`), `crates/server/src/config.rs`,
 `crates/node/src/metrics.rs` and `docs/decisions`.
 
@@ -47,7 +48,8 @@ Status values:
 | Subscription identifiers | refused | none | n/a | `SubscriptionIdentifiersNotSupported` | |
 | Persistent sessions and wills | refused at CONNECT | `sub --session`, `--will-*` | blocked | `ImplementationSpecificError`, `WillPublished`, `Session`, `Connect`, `Disconnect` | Core step 7c (D-143). The core declares `Session`, `Connect` and `Disconnect` stable, but `apply` refuses them as not yet built; a pending core card moves them to the reserved kinds |
 | Session expiry and message expiry | refused, or not carried through the log | flags | blocked | `SessionExpired`, `MessageExpired` | 7c, D-65 |
-| Credentials, TLS, enhanced authentication | refused; `auth` crate not wired | `--username`, `--tls-*` | blocked | `BadAuthenticationMethod` | D-110 |
+| Credentials and TLS | user name and password checked against a password file, topic rules (D-158 A); TLS on the MQTT listener (D-164 A) | `pub`, `sub`: `--username`, `--password-file` or `STRAUM_CLI_PASSWORD`, `--tls`, `--tls-ca`, `--tls-server-name`; a password never goes in clear text beyond loopback | verified | `BadUserNameOrPassword`, `NotAuthorized` | D-110, D-158, D-164 |
+| Enhanced authentication, client certificates | refused | none | n/a | `BadAuthenticationMethod` | D-110 (client certificates later) |
 
 ## Observability
 
@@ -62,8 +64,8 @@ Status values:
 | Capability | Core surface | CLI command | Status | Core elements | Notes |
 |---|---|---|---|---|---|
 | Planned handoff of the slot | SIGUSR1, same host only | `handoff` | blocked | `SlotEnd` | Needs the admin API ADR (D-141 C); remotely it needs D-110 too |
-| Users and ACLs | `auth` crate, not wired | `acl …` | blocked | | D-110 |
-| Server configuration | env vars, read once at start | none | n/a | `STRAUM_EXPERIMENTAL_CLUSTER`, `STRAUM_CLUSTER_NODE_ID`, `STRAUM_CLUSTER_PEERS`, `STRAUM_CLUSTER_LISTEN`, `STRAUM_CLUSTER_UNAUTHENTICATED_NETWORK`, `STRAUM_CLUSTER_DATA_DIR`, `STRAUM_CLUSTER_HEARTBEAT_MS`, `STRAUM_CLUSTER_TAKEOVER_TICKS`, `STRAUM_CLUSTER_RETAIN_BYTES`, `STRAUM_READ_BYTES`, `STRAUM_LOG_LEVEL`, `STRAUM_WORKER_THREADS` | Belongs to the server process; no runtime change exists to drive |
+| Users and ACLs | password and ACL files, read at start and on SIGHUP (D-158, D-166); no runtime API | `acl …` | blocked | | D-110 |
+| Server configuration | env vars, read once at start | none | n/a | `STRAUM_EXPERIMENTAL_CLUSTER`, `STRAUM_CLUSTER_NODE_ID`, `STRAUM_CLUSTER_PEERS`, `STRAUM_CLUSTER_LISTEN`, `STRAUM_CLUSTER_UNAUTHENTICATED_NETWORK`, `STRAUM_CLUSTER_DATA_DIR`, `STRAUM_CLUSTER_HEARTBEAT_MS`, `STRAUM_CLUSTER_TAKEOVER_TICKS`, `STRAUM_CLUSTER_RETAIN_BYTES`, `STRAUM_READ_BYTES`, `STRAUM_LOG_LEVEL`, `STRAUM_WORKER_THREADS`, `STRAUM_AUTH_PASSWORD_FILE`, `STRAUM_AUTH_ACL_FILE`, `STRAUM_AUTH_ALLOW_ANONYMOUS`, `STRAUM_TLS_CERT_PATH`, `STRAUM_TLS_KEY_PATH` | Belongs to the server process; no runtime change exists to drive |
 | Membership change | none | none | n/a | | Not in the core |
 | Create or delete topics | none; MQTT topics are not declared | none | n/a | | |
 

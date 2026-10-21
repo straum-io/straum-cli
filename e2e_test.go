@@ -5,9 +5,17 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"io"
+	"math/big"
+	"net"
 	"os"
 	"os/exec"
 	"slices"
@@ -27,7 +35,7 @@ type cluster struct {
 // startCluster runs three straum-server processes on loopback and waits
 // until every node serves and one sequences. STRAUM_SERVER_BIN is the
 // core's binary (make e2e builds it from ../straum).
-func startCluster(t *testing.T) *cluster {
+func startCluster(t *testing.T, extra ...string) *cluster {
 	t.Helper()
 	bin := os.Getenv("STRAUM_SERVER_BIN")
 	if bin == "" {
@@ -53,6 +61,7 @@ func startCluster(t *testing.T) *cluster {
 			"STRAUM_LOG_LEVEL=warn",
 			"NO_COLOR=1",
 		}
+		cmd.Env = append(cmd.Env, extra...)
 		// Each node's log goes to a file, printed if the test fails: a node
 		// that dies or answers EOF is diagnosable from CI (straum#13).
 		logPath := fmt.Sprintf("%s/n%d.log", data, i)
@@ -341,5 +350,100 @@ func TestE2EDisconnectedByTheNode(t *testing.T) {
 	}
 	if code, _ := first.wait(t); code != exitRefused || !strings.Contains(first.errOut.String(), "the node disconnected: reason 0x8e") {
 		t.Errorf("first sub: exit %d, stderr %q", code, first.errOut.String())
+	}
+}
+
+// TestE2ECredentialsAndTLS runs the cluster with client TLS and a password
+// file (core D-158 A, D-164 A) and publishes through them.
+func TestE2ECredentialsAndTLS(t *testing.T) {
+	dir := t.TempDir()
+	cert, key := dir+"/cert.pem", dir+"/key.pem"
+	writeSelfSigned(t, cert, key)
+	bin := os.Getenv("STRAUM_SERVER_BIN")
+	if bin == "" {
+		t.Fatal("STRAUM_SERVER_BIN is not set")
+	}
+	hashCmd := exec.Command(bin, "hash-password")
+	hashCmd.Stdin = strings.NewReader("secret\n")
+	hash, err := hashCmd.Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+	passwords, acl := dir+"/passwords", dir+"/acl"
+	if err := os.WriteFile(passwords, []byte("alice:"+strings.TrimSpace(string(hash))+"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(acl, []byte("user alice\npublish e2e/auth\nreadwrite e2e/ok/#\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	c := startCluster(t, "STRAUM_TLS_CERT_PATH="+cert, "STRAUM_TLS_KEY_PATH="+key, "STRAUM_AUTH_PASSWORD_FILE="+passwords, "STRAUM_AUTH_ACL_FILE="+acl)
+	broker := c.mqtt[0]
+	pub := func(env map[string]string, args ...string) (int, string) {
+		code, _, stderr := runCLI(t, env, append([]string{"pub", "--broker", broker, "-t", "e2e/auth", "-m", "hi", "-q", "1"}, args...)...)
+		return code, stderr
+	}
+	tlsArgs := []string{"--tls-ca", cert, "--username", "alice"}
+
+	if code, stderr := pub(map[string]string{"STRAUM_CLI_PASSWORD": "secret"}, tlsArgs...); code != exitOK {
+		t.Fatalf("with TLS and the right password: exit %d, %s", code, stderr)
+	}
+	if code, stderr := pub(map[string]string{"STRAUM_CLI_PASSWORD": "wrong"}, tlsArgs...); code != exitRefused || !strings.Contains(stderr, "bad user name or password") {
+		t.Fatalf("a wrong password: exit %d, %s", code, stderr)
+	}
+	if code, stderr := pub(nil, "--tls-ca", cert); code != exitRefused || !strings.Contains(stderr, "not authorized") {
+		t.Fatalf("no credentials, anonymous refused: exit %d, %s", code, stderr)
+	}
+	if code, _ := pub(map[string]string{"STRAUM_CLI_PASSWORD": "secret"}, "--username", "alice"); code != exitRefused {
+		t.Fatalf("plain TCP to a TLS listener: exit %d", code)
+	}
+	if code, stderr := pub(map[string]string{"STRAUM_CLI_PASSWORD": "secret"}, append(tlsArgs, "--tls-server-name", "other.example")...); code != exitRefused || !strings.Contains(stderr, "certificate") {
+		t.Fatalf("a certificate for another name: exit %d, %s", code, stderr)
+	}
+	if code, stderr := pub(map[string]string{"STRAUM_CLI_PASSWORD": "secret"}, append(tlsArgs, "-t", "e2e/denied")...); code != exitRefused || !strings.Contains(stderr, "not authorized") {
+		t.Fatalf("a publish a topic rule refuses: exit %d, %s", code, stderr)
+	}
+	sub := func(topic string) (int, string) {
+		code, _, stderr := runCLI(t, map[string]string{"STRAUM_CLI_PASSWORD": "secret"}, append([]string{"sub", "--broker", broker, "-t", topic, "--wait", "500ms"}, tlsArgs...)...)
+		return code, stderr
+	}
+	if code, stderr := sub("e2e/ok/x"); code != exitOK {
+		t.Fatalf("a subscription a topic rule allows: exit %d, %s", code, stderr)
+	}
+	if code, stderr := sub("e2e/denied"); code != exitRefused || !strings.Contains(stderr, "not authorized") {
+		t.Fatalf("a subscription a topic rule refuses: exit %d, %s", code, stderr)
+	}
+}
+
+// writeSelfSigned writes a certificate for 127.0.0.1, valid for an hour.
+func writeSelfSigned(t *testing.T, certPath, keyPath string) {
+	t.Helper()
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tmpl := &x509.Certificate{
+		SerialNumber:          big.NewInt(1),
+		Subject:               pkix.Name{CommonName: "straum e2e"},
+		IPAddresses:           []net.IP{net.ParseIP("127.0.0.1")},
+		NotBefore:             time.Now().Add(-time.Minute),
+		NotAfter:              time.Now().Add(time.Hour),
+		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		BasicConstraintsValid: true,
+		IsCA:                  true,
+	}
+	der, err := x509.CreateCertificate(rand.Reader, tmpl, tmpl, &key.PublicKey, key)
+	if err != nil {
+		t.Fatal(err)
+	}
+	keyDER, err := x509.MarshalPKCS8PrivateKey(key)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(certPath, pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der}), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(keyPath, pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: keyDER}), 0o600); err != nil {
+		t.Fatal(err)
 	}
 }
