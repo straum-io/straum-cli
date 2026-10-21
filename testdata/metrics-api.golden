@@ -1,0 +1,47 @@
+func CheckAddress(addr string) error
+
+func Stable() []string
+
+type Client struct {
+	HTTP	*http.Client
+	Timeout	time.Duration
+}
+
+func (c *Client) Collect(ctx context.Context, addrs []string) (Report, error)
+
+type ContentError struct {
+	// contains filtered or unexported fields
+}
+
+func (e *ContentError) Error() string
+
+type Node struct {
+	Address	string	`json:"address"`
+	State	State	`json:"state"`
+	ObservedAt	*time.Time	`json:"observed_at,omitempty"`
+	AgeMS		*int64		`json:"age_ms,omitempty"`
+	LatencyMS	int64	`json:"latency_ms"`
+	Error	string	`json:"error,omitempty"`
+	Err	error	`json:"-"`
+	Metrics	map[string]uint64	`json:"metrics,omitempty"`
+}
+
+type Report struct {
+	GeneratedAt	time.Time	`json:"generated_at"`
+	Nodes		[]Node		`json:"nodes"`
+}
+
+type State string
+
+const (
+	Observed	State	= "observed"
+	Unknown	State	= "unknown"
+)
+
+type StatusError struct {
+	Code	int
+	Status	string
+}
+
+func (e *StatusError) Error() string
+

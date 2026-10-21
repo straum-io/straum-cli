@@ -43,9 +43,9 @@ drift-check:
 coverage-check:
 	scripts/check-coverage.sh $(CORE)
 
-# Rewrite testdata/*.golden.* after an intended output change.
+# Rewrite testdata/*.golden* after an intended output or metrics API change.
 golden:
-	go test -run TestGolden -update .
+	go test . ./metrics -run TestGolden -update
 
 clean:
 	rm -rf bin dist
