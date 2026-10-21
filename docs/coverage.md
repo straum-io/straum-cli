@@ -65,7 +65,7 @@ Status values:
 |---|---|---|---|---|---|
 | Planned handoff of the slot | SIGUSR1, same host only | `handoff` | blocked | `SlotEnd` | Needs the admin API ADR (D-141 C); remotely it needs D-110 too |
 | Users and ACLs | password and ACL files, read at start and on SIGHUP (D-158, D-166); no runtime API | `acl …` | blocked | | D-110 |
-| Server configuration | env vars, read once at start | none | n/a | `STRAUM_EXPERIMENTAL_CLUSTER`, `STRAUM_CLUSTER_NODE_ID`, `STRAUM_CLUSTER_PEERS`, `STRAUM_CLUSTER_LISTEN`, `STRAUM_CLUSTER_UNAUTHENTICATED_NETWORK`, `STRAUM_CLUSTER_DATA_DIR`, `STRAUM_CLUSTER_HEARTBEAT_MS`, `STRAUM_CLUSTER_TAKEOVER_TICKS`, `STRAUM_CLUSTER_RETAIN_BYTES`, `STRAUM_READ_BYTES`, `STRAUM_LOG_LEVEL`, `STRAUM_WORKER_THREADS`, `STRAUM_AUTH_PASSWORD_FILE`, `STRAUM_AUTH_ACL_FILE`, `STRAUM_AUTH_ALLOW_ANONYMOUS`, `STRAUM_TLS_CERT_PATH`, `STRAUM_TLS_KEY_PATH` | Belongs to the server process; no runtime change exists to drive |
+| Server configuration | env vars, read once at start | none | n/a | `STRAUM_EXPERIMENTAL_CLUSTER`, `STRAUM_CLUSTER_NODE_ID`, `STRAUM_CLUSTER_PEERS`, `STRAUM_CLUSTER_LISTEN`, `STRAUM_CLUSTER_UNAUTHENTICATED_NETWORK`, `STRAUM_CLUSTER_DATA_DIR`, `STRAUM_CLUSTER_HEARTBEAT_MS`, `STRAUM_CLUSTER_TAKEOVER_TICKS`, `STRAUM_CLUSTER_RETAIN_BYTES`, `STRAUM_READ_BYTES`, `STRAUM_LOG_LEVEL`, `STRAUM_WORKER_THREADS`, `STRAUM_AUTH_PASSWORD_FILE`, `STRAUM_AUTH_ACL_FILE`, `STRAUM_AUTH_ALLOW_ANONYMOUS`, `STRAUM_TLS_CERT_PATH`, `STRAUM_TLS_KEY_PATH`, `STRAUM_WAL_PREALLOCATE_BYTES` | Belongs to the server process; no runtime change exists to drive |
 | Membership change | none | none | n/a | | Not in the core |
 | Create or delete topics | none; MQTT topics are not declared | none | n/a | | |
 
