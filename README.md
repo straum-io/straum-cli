@@ -1,5 +1,9 @@
 # straum-cli
 
+[![CI](https://github.com/straum-io/straum-cli/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/straum-io/straum-cli/actions/workflows/ci.yml)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
+![Status: experimental](https://img.shields.io/badge/status-experimental-orange)
+
 A terminal client for [Straum](https://github.com/straum-io/straum): publish,
 subscribe and see what each node of the cluster reports, from one binary.
 
