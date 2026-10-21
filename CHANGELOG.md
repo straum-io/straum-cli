@@ -10,6 +10,13 @@ schema has its own version (docs/status-json.md).
 
 ### Added
 
+- `pub` and `sub` connect with a user name and password (`--username`,
+  `--password-file` or `STRAUM_CLI_PASSWORD`) and over TLS (`--tls`,
+  `--tls-ca`, `--tls-server-name`), as the core accepts them (D-158 A,
+  D-164 A). A password is never sent in clear text beyond loopback.
+  Refusals name their reason ("bad user name or password", "not
+  authorized").
+
 - `status`: each configured node's stable metrics (core D-141 A).
   - Each value carries its source address and the age of the
     observation.
