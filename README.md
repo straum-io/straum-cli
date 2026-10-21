@@ -3,6 +3,8 @@
 A terminal client for [Straum](https://github.com/straum-io/straum): publish,
 subscribe and see what each node of the cluster reports, from one binary.
 
+**Docs:** [straum-io.github.io/ecosystem/straum-cli](https://straum-io.github.io/ecosystem/straum-cli/)
+
 Straum is experimental and not production-ready, and so is this CLI. It
 uses only what the core exposes today: MQTT and the read-only metrics
 endpoint.
