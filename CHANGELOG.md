@@ -52,6 +52,11 @@ schema has its own version (docs/status-json.md).
 
 ### Changed
 
+- `metrics` parses each node's response as it arrives instead of reading
+  it whole first, and skips comment lines without allocating: a 5-node
+  `Collect` makes about half the allocations (straum-cli#17). The API and
+  the results are unchanged.
+
 - The coverage and drift checks read the core's declared client contract:
   the stable-settings, stable-kinds, reserved-kinds, stable-reasons and
   stable-metrics blocks of its `docs/configuration.md`, each pinned by a

@@ -10,7 +10,6 @@
 package metrics
 
 import (
-	"bytes"
 	"context"
 	_ "embed"
 	"errors"
@@ -98,6 +97,20 @@ type timeoutError time.Duration
 
 func (e timeoutError) Error() string { return fmt.Sprintf("no answer within %s", time.Duration(e)) }
 func (e timeoutError) Unwrap() error { return context.DeadlineExceeded }
+
+// readErr remembers the first error other than io.EOF from r.
+type readErr struct {
+	r   io.Reader
+	err error
+}
+
+func (e *readErr) Read(p []byte) (int, error) {
+	n, err := e.r.Read(p)
+	if err != nil && err != io.EOF && e.err == nil {
+		e.err = err
+	}
+	return n, err
+}
 
 // CheckAddress accepts host:port only: the endpoint is plain HTTP at a
 // fixed path, so a scheme, a path or credentials are a mistake.
@@ -201,14 +214,18 @@ func (c *Client) scrape(ctx context.Context, hc *http.Client, addr string) (map[
 	if resp.StatusCode != http.StatusOK {
 		return nil, &StatusError{resp.StatusCode, resp.Status}
 	}
-	body, err := io.ReadAll(io.LimitReader(resp.Body, maxBody+1))
-	if err != nil {
-		return nil, timedOut(err)
+	// Parsed as it arrives, not read whole first: one line buffer, not a
+	// copy of the body. A read error is the network's; anything else the
+	// parser refuses is the content's.
+	limited := &io.LimitedReader{R: resp.Body, N: maxBody + 1}
+	body := &readErr{r: limited}
+	samples, err := parseSamples(body)
+	if body.err != nil {
+		return nil, timedOut(body.err)
 	}
-	if len(body) > maxBody {
+	if limited.N <= 0 {
 		return nil, &ContentError{fmt.Sprintf("response larger than %d bytes", maxBody)}
 	}
-	samples, err := parseSamples(bytes.NewReader(body))
 	if err != nil {
 		return nil, &ContentError{"malformed metrics: " + err.Error()}
 	}

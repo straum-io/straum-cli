@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-func fixture(t *testing.T, name string) string {
+func fixture(t testing.TB, name string) string {
 	t.Helper()
 	b, err := os.ReadFile("../testdata/" + name)
 	if err != nil {
@@ -25,7 +25,7 @@ func fixture(t *testing.T, name string) string {
 }
 
 // serve answers every request with status and body, and counts them.
-func serve(t *testing.T, status int, body string) (addr string, hits *atomic.Int32) {
+func serve(t testing.TB, status int, body string) (addr string, hits *atomic.Int32) {
 	t.Helper()
 	hits = new(atomic.Int32)
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
