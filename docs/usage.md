@@ -202,7 +202,10 @@ checks every PR body.
   hand.
 - **Withdrawing:** a bad release is unpublished (its tag stays, so the
   archives keep their provenance), and the fix ships as a new patch
-  version with a `CHANGELOG.md` entry that says what was wrong.
+  version with a `CHANGELOG.md` entry that says what was wrong. The tag is
+  also a Go module version that the Go proxy keeps: the patch release adds
+  a `retract` directive for it to `go.mod`, so `go get` steers away from
+  it.
 
 When the core changes something listed in `docs/coverage.md`, update the
 matrix in the same change.
