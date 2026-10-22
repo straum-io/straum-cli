@@ -5,7 +5,7 @@ is the CLI's roadmap (D-141 A, amended to allow MQTT publish and
 subscribe; the core's D-158 A and D-164 A supplied the credentials and TLS
 that D-141 kept out until they existed).
 
-Taken from the core at `0c5f007` (2026-10-16), credentials and TLS at `4e78fc2` (2026-10-21): `crates/gateway/src/lib.rs`,
+Taken from the core at `0c5f007` (2026-10-16), credentials and TLS at `4e78fc2` (2026-10-21), node TLS at `3d018c0` (2026-10-22): `crates/gateway/src/lib.rs`,
 `crates/journal` (`Kind`), `crates/server/src/config.rs`,
 `crates/node/src/metrics.rs` and `docs/decisions`.
 
@@ -65,7 +65,7 @@ Status values:
 |---|---|---|---|---|---|
 | Planned handoff of the slot | SIGUSR1, same host only | `handoff` | blocked | `SlotEnd` | Needs the admin API ADR (D-141 C); remotely it needs D-110 too |
 | Users and ACLs | password and ACL files, read at start and on SIGHUP (D-158, D-166); no runtime API | `acl …` | blocked | | D-110 |
-| Server configuration | env vars, read once at start | none | n/a | `STRAUM_EXPERIMENTAL_CLUSTER`, `STRAUM_CLUSTER_NODE_ID`, `STRAUM_CLUSTER_PEERS`, `STRAUM_CLUSTER_LISTEN`, `STRAUM_CLUSTER_UNAUTHENTICATED_NETWORK`, `STRAUM_CLUSTER_DATA_DIR`, `STRAUM_CLUSTER_HEARTBEAT_MS`, `STRAUM_CLUSTER_TAKEOVER_TICKS`, `STRAUM_CLUSTER_RETAIN_BYTES`, `STRAUM_READ_BYTES`, `STRAUM_LOG_LEVEL`, `STRAUM_WORKER_THREADS`, `STRAUM_AUTH_PASSWORD_FILE`, `STRAUM_AUTH_ACL_FILE`, `STRAUM_AUTH_ALLOW_ANONYMOUS`, `STRAUM_TLS_CERT_PATH`, `STRAUM_TLS_KEY_PATH`, `STRAUM_WAL_PREALLOCATE_BYTES` | Belongs to the server process; no runtime change exists to drive |
+| Server configuration | env vars, read once at start | none | n/a | `STRAUM_EXPERIMENTAL_CLUSTER`, `STRAUM_CLUSTER_NODE_ID`, `STRAUM_CLUSTER_PEERS`, `STRAUM_CLUSTER_LISTEN`, `STRAUM_CLUSTER_UNAUTHENTICATED_NETWORK`, `STRAUM_CLUSTER_DATA_DIR`, `STRAUM_CLUSTER_HEARTBEAT_MS`, `STRAUM_CLUSTER_TAKEOVER_TICKS`, `STRAUM_CLUSTER_RETAIN_BYTES`, `STRAUM_READ_BYTES`, `STRAUM_LOG_LEVEL`, `STRAUM_WORKER_THREADS`, `STRAUM_AUTH_PASSWORD_FILE`, `STRAUM_AUTH_ACL_FILE`, `STRAUM_AUTH_ALLOW_ANONYMOUS`, `STRAUM_TLS_CERT_PATH`, `STRAUM_TLS_KEY_PATH`, `STRAUM_CLUSTER_TLS_CERT_PATH`, `STRAUM_CLUSTER_TLS_KEY_PATH`, `STRAUM_CLUSTER_TLS_CA_PATH`, `STRAUM_WAL_PREALLOCATE_BYTES` | Belongs to the server process; no runtime change exists to drive. The three `STRAUM_CLUSTER_TLS_*` secure the links between nodes (ADR-0010), which the CLI never opens |
 | Membership change | none | none | n/a | | Not in the core |
 | Create or delete topics | none; MQTT topics are not declared | none | n/a | | |
 
