@@ -3,6 +3,7 @@ package metrics
 import (
 	"context"
 	"errors"
+	"io"
 	"maps"
 	"net"
 	"net/http"
@@ -15,7 +16,7 @@ import (
 	"time"
 )
 
-func fixture(t *testing.T, name string) string {
+func fixture(t testing.TB, name string) string {
 	t.Helper()
 	b, err := os.ReadFile("../testdata/" + name)
 	if err != nil {
@@ -25,7 +26,7 @@ func fixture(t *testing.T, name string) string {
 }
 
 // serve answers every request with status and body, and counts them.
-func serve(t *testing.T, status int, body string) (addr string, hits *atomic.Int32) {
+func serve(t testing.TB, status int, body string) (addr string, hits *atomic.Int32) {
 	t.Helper()
 	hits = new(atomic.Int32)
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -243,5 +244,28 @@ func TestCollectConfiguration(t *testing.T) {
 	}
 	if r, err := (&Client{}).Collect(context.Background(), nil); err != nil || len(r.Nodes) != 0 {
 		t.Errorf("no addresses: %+v, %v", r, err)
+	}
+}
+
+// A node that sends its headers and part of the body, then stalls: the
+// deadline hits while the body is being parsed, and the node is Unknown
+// for a timeout, not for malformed content.
+func TestCollectTimeoutMidBody(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		io.WriteString(w, "# HELP straum_node This node's id.\nstraum_node 0\n")
+		w.(http.Flusher).Flush()
+		<-r.Context().Done()
+	}))
+	t.Cleanup(srv.Close)
+	c := Client{Timeout: 200 * time.Millisecond}
+	r, err := c.Collect(context.Background(), []string{strings.TrimPrefix(srv.URL, "http://")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	n := r.Nodes[0]
+	var content *ContentError
+	if n.State != Unknown || !errors.Is(n.Err, context.DeadlineExceeded) || errors.As(n.Err, &content) {
+		t.Fatalf("want an Unknown node for a timeout, got %+v (%v)", n, n.Err)
 	}
 }
