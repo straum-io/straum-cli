@@ -189,13 +189,23 @@ checks every PR body.
 
 ## Releases
 
-- **Building:** pushing a `v*` tag runs `.github/workflows/release.yml`.
-  It runs `make check`, then GoReleaser builds archives for linux, darwin
-  and windows, each on amd64 and arm64, plus checksums.
+- **Building:** pushing a `v*` tag on `main` runs
+  `.github/workflows/release.yml`. It refuses a tag that is not on `main`,
+  runs `make check`, then GoReleaser (the same version as
+  `make release-snapshot`) builds archives for linux, darwin and windows,
+  each on amd64 and arm64, plus checksums.
+- **Provenance:** every archive and `checksums.txt` gets a signed build
+  provenance: `gh attestation verify <archive> -R straum-io/straum-cli`.
 - **Publishing:** the build creates a **draft** GitHub release. A
   maintainer reads it and publishes it.
 - **Release notes:** they come from `CHANGELOG.md`, which is written by
   hand.
+- **Withdrawing:** a bad release is unpublished (its tag stays, so the
+  archives keep their provenance), and the fix ships as a new patch
+  version with a `CHANGELOG.md` entry that says what was wrong. The tag is
+  also a Go module version that the Go proxy keeps: the patch release adds
+  a `retract` directive for it to `go.mod`, so `go get` steers away from
+  it.
 
 When the core changes something listed in `docs/coverage.md`, update the
 matrix in the same change.

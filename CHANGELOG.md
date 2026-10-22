@@ -56,6 +56,9 @@ schema has its own version (docs/status-json.md).
   it whole first, and skips comment lines without allocating: a 5-node
   `Collect` makes about half the allocations (straum-cli#17). The API and
   the results are unchanged.
+- Releases are cut only from tags on `main`, with GoReleaser pinned to the
+  version `make release-snapshot` uses, and carry a signed build
+  provenance for every archive and `checksums.txt`.
 
 - The coverage and drift checks read the core's declared client contract:
   the stable-settings, stable-kinds, reserved-kinds, stable-reasons and
