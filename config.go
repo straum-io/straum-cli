@@ -293,8 +293,15 @@ func writeFileAtomic(path string, data []byte) error {
 	}
 	if err != nil {
 		_ = os.Remove(tmp)
+		return err
 	}
-	return err
+	// Make the rename durable. Windows cannot open a directory this way;
+	// there the rename is as durable as the file system makes it.
+	if d, derr := os.Open(dir); derr == nil {
+		_ = d.Sync()
+		d.Close()
+	}
+	return nil
 }
 
 // globals holds the global flags and the settings resolved from them.

@@ -18,7 +18,8 @@ ends before --count messages were read.
 --name N saves the next seq per partition after each batch is written to
 stdout, so a later run continues there (see straum-cli positions). Delivery
 to stdout is at least once: a crash between writing and saving prints those
-messages again.
+messages again. A run that reads nothing saves nothing: after
+--from latest with no new message, the next run starts at the default.
 
 Table output is tab-separated: partition, seq, timestamp, key ("-" for no
 key), body, and with --print headers the headers as name=value,... Bytes are

@@ -125,8 +125,8 @@ type topicLister struct {
 
 func (l *topicLister) page(topics []admin.TopicSummary) error {
 	if !l.asJSON {
-		// ponytail: the table holds every name (at most 80 bytes each) in
-		// memory; -o json streams.
+		// The table holds every name (at most 80 bytes each) in memory to
+		// align its columns; -o json streams.
 		l.rows = append(l.rows, topics...)
 		return nil
 	}

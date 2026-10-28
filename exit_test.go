@@ -66,8 +66,11 @@ func TestRequestErrMapping(t *testing.T) {
 			t.Errorf("%v read-only: exit %d, want 3", err, got)
 		}
 	}
-	if err := requestErr(context.Canceled, true); !errors.Is(err, context.Canceled) || exitOf(err) != -1 {
+	if err := requestErr(context.Canceled, false); !errors.Is(err, context.Canceled) || exitOf(err) != -1 {
 		t.Errorf("an interrupt is left to run(): %v", err)
+	}
+	if got := exitOf(requestErr(context.Canceled, true)); got != exitUnknown {
+		t.Errorf("an interrupt during Produce or CreateTopic: exit %d, want 5", got)
 	}
 	if exitOf(connectErr(errors.New("dial"))) != exitConnect {
 		t.Error("connect failure is exit 3")

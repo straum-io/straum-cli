@@ -54,7 +54,12 @@ A batch is sent when it reaches --batch-messages or --batch-bytes, or when
 the input stalls for --linger (0: at once). Each acknowledgement is printed
 when it arrives; acknowledgements are durable (on the broker's disk).
 
-Without --retries, a lost connection is exit 5: the request in flight may or
+The broker also refuses a Produce larger than one store commit
+(max_group_messages, default 4096, and max_group_bytes, default 4 MiB, which
+HelloOk does not report) with MessageTooLarge, exit 4; the defaults stay
+below both.
+
+Without --retries, a lost connection or an interrupt during a Produce is exit 5: the request in flight may or
 may not be stored. With --retries, a resent request may be stored twice.`,
 		Args: cobra.MinimumNArgs(1),
 	}

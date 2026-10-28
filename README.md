@@ -116,10 +116,10 @@ with the same cluster id) is refused until `positions reset`.
 | 2 | stopped by a limit before the requested result: `consume --count` not reached within `--duration`; some `ping --count` pings failed |
 | 3 | could not connect or complete Hello, or a request that changes nothing lost its connection or timed out |
 | 4 | refused by the broker; the request had no effect (`UnknownTopic`, `TopicExists`, `MessageTooLarge`, `Forbidden`, ...) |
-| 5 | `produce` or `topic create` sent, outcome unknown: the connection broke or the timeout passed before the answer, so the messages or the topic may or may not exist |
+| 5 | `produce` or `topic create` sent, outcome unknown: the connection broke, the timeout passed or Ctrl-C came before the answer, so the messages or the topic may or may not exist |
 | 6 | the broker's storage failed (`StorageError`); it refuses writes until restarted |
 | 7 | retries exhausted (`Overloaded`, `NotLeader`, `FencedLeaderEpoch`); the request had no effect |
-| 130 | interrupted (Ctrl-C), except `consume --follow`, which exits 0 |
+| 130 | interrupted (Ctrl-C) with no request in flight that changes anything; `consume --follow` exits 0 |
 
 `produce` and `topic create` do not resend a request by default: protocol
 version 0 has no idempotent produce, so a resent request may be stored
@@ -134,6 +134,9 @@ scripts/validate.sh pr <straum-checkout>    # + six-platform build, goreleaser c
 make golden                                 # rewrite testdata/*.golden.* after an intended output change
 make docs                                   # rewrite docs/commands after a command or flag change
 ```
+
+Dependencies: cobra for the commands, straum-go-sdk for the protocol,
+`golang.org/x/sys` for file locks on Windows.
 
 The live tests run the CLI against `straum-broker` and
 `straum-fake-server` built from the Straum commit in `CONTRACT`, the one

@@ -65,7 +65,8 @@ func connectErr(err error) error {
 // CreateTopic: the SDK does not tell "not sent" from "sent, no answer"
 // after a lost connection, so any connection failure, deadline or
 // protocol violation is "outcome unknown" (exit 5) for them, and exit 3
-// for requests that change nothing.
+// for requests that change nothing. An interrupt during Produce or
+// CreateTopic is exit 5 too; elsewhere it is left to run() (exit 130).
 func requestErr(err error, mutating bool) error {
 	if err == nil {
 		return nil
@@ -84,6 +85,10 @@ func requestErr(err error, mutating bool) error {
 			return &exitError{exitRefused, err}
 		}
 	case errors.Is(err, context.Canceled):
+		if mutating {
+			// Interrupted with the request possibly on the wire.
+			return &exitError{exitUnknown, errors.New("interrupted while the request was in flight; the outcome is unknown: it may have taken effect")}
+		}
 		return err // interrupted: run() reports it
 	case errors.Is(err, client.ErrConnection), errors.Is(err, context.DeadlineExceeded),
 		errors.Is(err, client.ErrProtocol), errors.Is(err, client.ErrClosed):

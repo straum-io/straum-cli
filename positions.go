@@ -76,10 +76,12 @@ func (g *globals) positions() (positionStore, error) {
 // lockName holds a consumer name for the duration of a consume, so that two
 // processes never save positions for one name at once.
 func (s positionStore) lockName(name string) (func(), error) {
-	if err := os.MkdirAll(s.dir, 0o700); err != nil {
+	// Name locks live in their own directory, apart from positions.lock.
+	dir := filepath.Join(s.dir, "names")
+	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return nil, localErr(err)
 	}
-	unlock, err := lockFile(filepath.Join(s.dir, name+".lock"), false)
+	unlock, err := lockFile(filepath.Join(dir, name+".lock"), false)
 	if errors.Is(err, errLocked) {
 		return nil, usageErr("consumer name %q is in use by another straum-cli process", name)
 	}

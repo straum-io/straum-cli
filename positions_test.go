@@ -85,6 +85,17 @@ func TestNameLock(t *testing.T) {
 		t.Fatalf("after unlock: %v", err)
 	}
 	again()
+
+	// The name "positions" does not collide with the file lock: holding it
+	// and saving does not deadlock.
+	held, err := s.lockName("positions")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer held()
+	if err := s.save("c", "t", "positions", map[uint32]uint64{0: 1}); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestPositionsCommands(t *testing.T) {
