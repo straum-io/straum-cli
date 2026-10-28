@@ -1,0 +1,63 @@
+{
+  "name": "produce_storage_error",
+  "description": "The broker's store failed: StorageError, exit 6.",
+  "cli": [
+    "produce",
+    "t",
+    "hello",
+    "--partition",
+    "0"
+  ],
+  "exit": 6,
+  "server": [
+    {
+      "accept": true
+    },
+    {
+      "expect": {
+        "type": "Hello",
+        "body": {
+          "min_version": 0,
+          "auth_mechanism": "none"
+        }
+      },
+      "reply": {
+        "type": "HelloOk",
+        "body": {
+          "version": 0,
+          "cluster_id": "fake",
+          "node_id": 1,
+          "max_frame_bytes": 8388608,
+          "max_message_bytes": 1048576
+        }
+      }
+    },
+    {
+      "expect": {
+        "type": "Produce",
+        "body": {
+          "topic": "t",
+          "partition": 0,
+          "ack_level": 1,
+          "messages": [
+            {
+              "body": "68656c6c6f"
+            }
+          ]
+        }
+      },
+      "reply": {
+        "type": "Error",
+        "body": {
+          "code": "StorageError",
+          "message": "",
+          "leader_node_id": 0,
+          "leader_epoch": 0,
+          "retry_after_ms": 0,
+          "min_version": 0,
+          "max_version": 0
+        }
+      }
+    }
+  ]
+}

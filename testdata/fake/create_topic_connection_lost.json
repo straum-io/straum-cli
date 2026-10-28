@@ -1,0 +1,43 @@
+{
+  "name": "create_topic_connection_lost",
+  "description": "The connection closes before CreateTopic is answered: exit 5, the topic may or may not exist.",
+  "cli": [
+    "topic",
+    "create",
+    "t"
+  ],
+  "exit": 5,
+  "server": [
+    {
+      "accept": true
+    },
+    {
+      "expect": {
+        "type": "Hello",
+        "body": {
+          "min_version": 0,
+          "auth_mechanism": "none"
+        }
+      },
+      "reply": {
+        "type": "HelloOk",
+        "body": {
+          "version": 0,
+          "cluster_id": "fake",
+          "node_id": 1,
+          "max_frame_bytes": 8388608,
+          "max_message_bytes": 1048576
+        }
+      }
+    },
+    {
+      "expect": {
+        "type": "CreateTopic",
+        "body": {
+          "name": "t"
+        }
+      },
+      "close": true
+    }
+  ]
+}

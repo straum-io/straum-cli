@@ -1,0 +1,8 @@
+KEY                  VALUE           SOURCE
+profile              default         default
+broker               127.0.0.1:7171  default
+timeout              10s             default
+connect_timeout      10s             default
+output               table           default
+client_name          straum-cli      default
+max_in_flight_bytes  8388608         default

@@ -1,0 +1,7 @@
+{"key":"profile","source":"default","value":"default"}
+{"key":"broker","source":"default","value":"127.0.0.1:7171"}
+{"key":"timeout","source":"default","value":"10s"}
+{"key":"connect_timeout","source":"default","value":"10s"}
+{"key":"output","source":"flag","value":"json"}
+{"key":"client_name","source":"default","value":"straum-cli"}
+{"key":"max_in_flight_bytes","source":"default","value":"8388608"}
