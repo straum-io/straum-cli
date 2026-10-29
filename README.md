@@ -112,7 +112,7 @@ with the same cluster id) is refused until `positions reset`.
 | Code | Meaning |
 |---|---|
 | 0 | done |
-| 1 | usage, configuration, local state or input error; nothing was sent, except that `produce` prints the acknowledgements of what it sent before a bad input line |
+| 1 | usage, configuration, local state or input error; nothing was sent, except by `produce` stopped by an input error: the messages before it were sent, and it reports how many were acknowledged (stderr, and a `summary` object with `-o json`) |
 | 2 | stopped by a limit before the requested result: `consume --count` not reached within `--duration`; some `ping --count` pings failed |
 | 3 | could not connect or complete Hello, or a request that changes nothing lost its connection or timed out |
 | 4 | refused by the broker; the request had no effect (`UnknownTopic`, `TopicExists`, `MessageTooLarge`, `Forbidden`, ...) |

@@ -252,6 +252,12 @@ func renderAck(w io.Writer, asJSON bool, topic string, a producer.Ack) error {
 	return err
 }
 
+// renderInputStop is produce's JSON summary when it stops on an input
+// error: how many messages were acknowledged (stored) before it.
+func renderInputStop(w io.Writer, acked int, err error) error {
+	return writeJSON(w, map[string]any{"type": "summary", "acknowledged": acked, "error": err.Error()})
+}
+
 type messageFormat struct {
 	asJSON      bool
 	forceBase64 bool

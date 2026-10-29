@@ -16,5 +16,7 @@ version may change commands, flags, exit codes and the JSON output.
   `positions list|reset|set`, `version`.
 - Table and JSON-lines output (`docs/output.md`), exit codes 0 to 7 and
   130 (README.md).
+- `produce` stopped by an input error reports how many messages were
+  acknowledged before it (stderr; a `summary` line with `-o json`).
 - A `key = value` configuration file with profiles; saved positions for
   named consumers.

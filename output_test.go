@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"testing"
 	"time"
 
@@ -55,6 +56,10 @@ func TestGoldenOutput(t *testing.T) {
 		section("stats", renderStats(&b, asJSON, stats))
 		b.WriteString("# produce\n")
 		section("ack", renderAck(&b, asJSON, "orders", producer.Ack{Partition: 0, BaseSeq: 40, Count: 2, LeaderEpoch: 1, Timestamp: ts}))
+		if asJSON {
+			b.WriteString("# produce, stopped by an input error\n")
+			section("input stop", renderInputStop(&b, 1000, errors.New("stdin:1001: body: missing")))
+		}
 		b.WriteString("# consume\n")
 		section("consume", renderMessages(&b, messageFormat{asJSON: asJSON}, "orders", 0, msgs))
 		b.WriteString("# consume --print headers\n")

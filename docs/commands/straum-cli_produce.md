@@ -27,6 +27,12 @@ The broker also refuses a Produce larger than one store commit
 HelloOk does not report) with MessageTooLarge, exit 4; the defaults stay
 below both.
 
+On an input error (a bad JSON line, a line or file over the broker's
+message limit, an unreadable file) the messages read before it are still
+sent, the count of acknowledged messages goes to stderr and, with -o json,
+a final {"type": "summary", "acknowledged": N, "error": ...} line to stdout;
+the exit code is 1.
+
 Without --retries, a lost connection or an interrupt during a Produce is exit 5: the request in flight may or
 may not be stored. With --retries, a resent request may be stored twice.
 

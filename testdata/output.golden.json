@@ -14,6 +14,8 @@
 {"node_id":1,"open_connections":2,"pending_bytes":3,"pending_bytes_peak":4,"max_pending_bytes":5,"fetch_waiters":6,"produce_requests":7,"groups_committed":8,"fsyncs":9,"messages_accepted":10,"messages_deduplicated":11,"body_bytes_received":12,"body_bytes_new":13,"wal_bytes":14,"segment_bytes":15,"index_bytes":16}
 # produce
 {"base_seq":40,"count":2,"partition":0,"timestamp_ms":1793188800123,"topic":"orders"}
+# produce, stopped by an input error
+{"acknowledged":1000,"error":"stdin:1001: body: missing","type":"summary"}
 # consume
 {"topic":"orders","partition":0,"seq":7,"timestamp_ms":1793188800123,"key":null,"headers":[],"body":"plain text"}
 {"topic":"orders","partition":0,"seq":8,"timestamp_ms":1793188800123,"key":"","headers":[],"body":"tab\there"}

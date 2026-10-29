@@ -328,6 +328,26 @@ func TestLiveProduceConsume(t *testing.T) {
 	big := filepath.Join(dir, "big")
 	os.WriteFile(big, make([]byte, 1<<20+1), 0o600)
 	p.exit(exitUsage, "max_message_bytes", "produce", "orders", "--file", big)
+
+	// An input error after acknowledged batches: exit 1, and the count of
+	// acknowledged messages on stderr and in the JSON summary.
+	p.ok("", "topic", "create", "partial")
+	in := "{\"body\":\"p1\"}\n{\"body\":\"p2\"}\n{\"body\":\"p3\"}\nnot json\n{\"body\":\"p4\"}\n"
+	code, out, errOut := p.run(in, "produce", "partial", "--stdin", "--input", "json", "--batch-messages", "2", "--linger", "1s", "-o", "json")
+	rows = jsonLines(t, out)
+	if code != exitUsage || !strings.Contains(errOut, "3 messages were acknowledged before the input error") || !strings.Contains(errOut, "stdin:4") {
+		t.Fatalf("input error: exit %d, stderr %q", code, errOut)
+	}
+	if last := rows[len(rows)-1]; last["type"] != "summary" || last["acknowledged"] != float64(3) {
+		t.Fatalf("summary: %v", rows)
+	}
+	if got := bodies(t, p.ok("", "consume", "partial", "-o", "json")); strings.Join(got, ",") != "p1,p2,p3" {
+		t.Fatalf("stored: %v", got)
+	}
+	code, out, errOut = p.run("ok\n", "produce", "partial", "--stdin", "--file", "x")
+	if code != exitUsage || out != "" || strings.Contains(errOut, "acknowledged") {
+		t.Fatalf("a usage error reports no count: %d %q %q", code, out, errOut)
+	}
 }
 
 func TestLiveFollowAndLimits(t *testing.T) {

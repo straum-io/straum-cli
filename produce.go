@@ -59,6 +59,12 @@ The broker also refuses a Produce larger than one store commit
 HelloOk does not report) with MessageTooLarge, exit 4; the defaults stay
 below both.
 
+On an input error (a bad JSON line, a line or file over the broker's
+message limit, an unreadable file) the messages read before it are still
+sent, the count of acknowledged messages goes to stderr and, with -o json,
+a final {"type": "summary", "acknowledged": N, "error": ...} line to stdout;
+the exit code is 1.
+
 Without --retries, a lost connection or an interrupt during a Produce is exit 5: the request in flight may or
 may not be stored. With --retries, a resent request may be stored twice.`,
 		Args: cobra.MinimumNArgs(1),
@@ -502,6 +508,13 @@ func runProduce(cmd *cobra.Command, g *globals, o *produceOpts, attempts int, to
 			// What was read before the bad input is still sent.
 			if err := b.flushAll(); err != nil {
 				return err
+			}
+			// Exit 1 then says what was stored: the acknowledged count.
+			fmt.Fprintf(cmd.ErrOrStderr(), "straum-cli: %d messages were acknowledged before the input error\n", acked)
+			if g.json() {
+				if err := renderInputStop(out, acked, it.err); err != nil {
+					return localErr(err)
+				}
 			}
 			return it.err
 		}
