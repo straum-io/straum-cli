@@ -1,0 +1,6 @@
+# The Straum commit the live tests run against: the one straum-go-sdk
+# v0.1.0 (go.mod) pins in its own CONTRACT. Change both together.
+repository: https://github.com/straum-io/straum
+commit: d6d91c784702a7594c0b83800885f8cee4bd4b33
+spec: docs/protocol.md (protocol version 0)
+sdk: github.com/straum-io/straum-go-sdk v0.1.0

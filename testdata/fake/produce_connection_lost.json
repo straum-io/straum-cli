@@ -1,0 +1,52 @@
+{
+  "name": "produce_connection_lost",
+  "description": "The connection closes before the Produce is answered; without --retries the CLI does not resend and exits 5 (outcome unknown).",
+  "cli": [
+    "produce",
+    "t",
+    "hello",
+    "--partition",
+    "0"
+  ],
+  "exit": 5,
+  "server": [
+    {
+      "accept": true
+    },
+    {
+      "expect": {
+        "type": "Hello",
+        "body": {
+          "min_version": 0,
+          "auth_mechanism": "none"
+        }
+      },
+      "reply": {
+        "type": "HelloOk",
+        "body": {
+          "version": 0,
+          "cluster_id": "fake",
+          "node_id": 1,
+          "max_frame_bytes": 8388608,
+          "max_message_bytes": 1048576
+        }
+      }
+    },
+    {
+      "expect": {
+        "type": "Produce",
+        "body": {
+          "topic": "t",
+          "partition": 0,
+          "ack_level": 1,
+          "messages": [
+            {
+              "body": "68656c6c6f"
+            }
+          ]
+        }
+      },
+      "close": true
+    }
+  ]
+}

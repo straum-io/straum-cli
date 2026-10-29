@@ -1,0 +1,196 @@
+{
+  "name": "fetch_overloaded",
+  "description": "Fetch answered Overloaded on every attempt (the SDK's default of 5): exit 7.",
+  "cli": [
+    "consume",
+    "t",
+    "--partition",
+    "0",
+    "--from",
+    "0",
+    "--follow",
+    "--duration",
+    "10s"
+  ],
+  "exit": 7,
+  "server": [
+    {
+      "accept": true
+    },
+    {
+      "expect": {
+        "type": "Hello",
+        "body": {
+          "min_version": 0,
+          "auth_mechanism": "none"
+        }
+      },
+      "reply": {
+        "type": "HelloOk",
+        "body": {
+          "version": 0,
+          "cluster_id": "fake",
+          "node_id": 1,
+          "max_frame_bytes": 8388608,
+          "max_message_bytes": 1048576
+        }
+      }
+    },
+    {
+      "expect": {
+        "type": "Metadata",
+        "body": {
+          "topics": [
+            "t"
+          ]
+        }
+      },
+      "reply": {
+        "type": "MetadataOk",
+        "body": {
+          "cluster_id": "fake",
+          "controller_node_id": 1,
+          "nodes": [
+            {
+              "node_id": 1,
+              "host": "{{host}}",
+              "port": "{{port}}",
+              "rack": ""
+            }
+          ],
+          "topics": [
+            {
+              "name": "t",
+              "error": 0,
+              "partitions": [
+                {
+                  "partition": 0,
+                  "leader_node_id": 1,
+                  "leader_epoch": 1,
+                  "replicas": [
+                    1
+                  ],
+                  "in_sync_replicas": [
+                    1
+                  ],
+                  "start_seq": "0",
+                  "next_seq": "0"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "expect": {
+        "type": "Fetch",
+        "body": {
+          "topic": "t",
+          "partition": 0,
+          "from_seq": "0"
+        }
+      },
+      "reply": {
+        "type": "Error",
+        "body": {
+          "code": "Overloaded",
+          "message": "",
+          "leader_node_id": 0,
+          "leader_epoch": 0,
+          "retry_after_ms": 5,
+          "min_version": 0,
+          "max_version": 0
+        }
+      }
+    },
+    {
+      "expect": {
+        "type": "Fetch",
+        "body": {
+          "topic": "t",
+          "partition": 0,
+          "from_seq": "0"
+        }
+      },
+      "reply": {
+        "type": "Error",
+        "body": {
+          "code": "Overloaded",
+          "message": "",
+          "leader_node_id": 0,
+          "leader_epoch": 0,
+          "retry_after_ms": 5,
+          "min_version": 0,
+          "max_version": 0
+        }
+      }
+    },
+    {
+      "expect": {
+        "type": "Fetch",
+        "body": {
+          "topic": "t",
+          "partition": 0,
+          "from_seq": "0"
+        }
+      },
+      "reply": {
+        "type": "Error",
+        "body": {
+          "code": "Overloaded",
+          "message": "",
+          "leader_node_id": 0,
+          "leader_epoch": 0,
+          "retry_after_ms": 5,
+          "min_version": 0,
+          "max_version": 0
+        }
+      }
+    },
+    {
+      "expect": {
+        "type": "Fetch",
+        "body": {
+          "topic": "t",
+          "partition": 0,
+          "from_seq": "0"
+        }
+      },
+      "reply": {
+        "type": "Error",
+        "body": {
+          "code": "Overloaded",
+          "message": "",
+          "leader_node_id": 0,
+          "leader_epoch": 0,
+          "retry_after_ms": 5,
+          "min_version": 0,
+          "max_version": 0
+        }
+      }
+    },
+    {
+      "expect": {
+        "type": "Fetch",
+        "body": {
+          "topic": "t",
+          "partition": 0,
+          "from_seq": "0"
+        }
+      },
+      "reply": {
+        "type": "Error",
+        "body": {
+          "code": "Overloaded",
+          "message": "",
+          "leader_node_id": 0,
+          "leader_epoch": 0,
+          "retry_after_ms": 5,
+          "min_version": 0,
+          "max_version": 0
+        }
+      }
+    }
+  ]
+}

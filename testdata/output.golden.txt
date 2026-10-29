@@ -1,0 +1,58 @@
+# ping
+broker             127.0.0.1:7171
+protocol version   0
+cluster id         prod
+node id            1
+max frame bytes    8388608
+max message bytes  1048576
+pong seq=1 rtt=0.182 ms
+# topic create
+created orders
+exists orders
+# topic list (two pages)
+NAME         PARTITIONS
+a            1
+orders       1
+payments-eu  1
+# topic describe
+topic               orders
+replication factor  1
+retention           24h0m0s
+
+PARTITION  START_SEQ  NEXT_SEQ  MESSAGES  INDEX_BYTES
+0          0          42        42        1344
+# broker stats
+COUNTER                VALUE
+node_id                1
+open_connections       2
+pending_bytes          3
+pending_bytes_peak     4
+max_pending_bytes      5
+fetch_waiters          6
+produce_requests       7
+groups_committed       8
+fsyncs                 9
+messages_accepted      10
+messages_deduplicated  11
+body_bytes_received    12
+body_bytes_new         13
+wal_bytes              14
+segment_bytes          15
+index_bytes            16
+# produce
+acked topic=orders partition=0 base_seq=40 count=2 timestamp=2026-10-28T12:00:00.123Z
+# consume
+0	7	2026-10-28T12:00:00.123Z	-	plain text
+0	8	2026-10-28T12:00:00.123Z	""	"tab\there"
+0	9	2026-10-28T12:00:00.123Z	user-1	base64:/wAB
+0	10	2026-10-28T12:00:00.123Z	-	
+# consume --print headers
+0	9	2026-10-28T12:00:00.123Z	user-1	base64:/wAB	trace=abc,bin=base64:/g==
+# consume --bytes base64
+0	7	2026-10-28T12:00:00.123Z	-	base64:cGxhaW4gdGV4dA==
+# positions list
+NAME     TOPIC   PARTITION  NEXT_SEQ  CLUSTER  SAVED_AT
+billing  orders  0          42        prod     2026-10-28T12:00:00.123Z
+# config profiles
+* local
+  staging

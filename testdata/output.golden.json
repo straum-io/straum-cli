@@ -1,0 +1,32 @@
+# ping
+{"broker":"127.0.0.1:7171","cluster_id":"prod","max_frame_bytes":8388608,"max_message_bytes":1048576,"node_id":1,"type":"hello","version":0}
+{"rtt_ms":0.182,"seq":1,"type":"pong"}
+# topic create
+{"created":true,"topic":"orders"}
+{"created":false,"topic":"orders"}
+# topic list (two pages)
+{"name":"a","partitions":1}
+{"name":"orders","partitions":1}
+{"name":"payments-eu","partitions":1}
+# topic describe
+{"name":"orders","partitions":[{"index_bytes":1344,"message_count":42,"next_seq":42,"partition":0,"start_seq":0}],"replication_factor":1,"retention_ms":86400000}
+# broker stats
+{"node_id":1,"open_connections":2,"pending_bytes":3,"pending_bytes_peak":4,"max_pending_bytes":5,"fetch_waiters":6,"produce_requests":7,"groups_committed":8,"fsyncs":9,"messages_accepted":10,"messages_deduplicated":11,"body_bytes_received":12,"body_bytes_new":13,"wal_bytes":14,"segment_bytes":15,"index_bytes":16}
+# produce
+{"base_seq":40,"count":2,"partition":0,"timestamp_ms":1793188800123,"topic":"orders"}
+# produce, stopped by an input error
+{"acknowledged":1000,"error":"stdin:1001: body: missing","type":"summary"}
+# consume
+{"topic":"orders","partition":0,"seq":7,"timestamp_ms":1793188800123,"key":null,"headers":[],"body":"plain text"}
+{"topic":"orders","partition":0,"seq":8,"timestamp_ms":1793188800123,"key":"","headers":[],"body":"tab\there"}
+{"topic":"orders","partition":0,"seq":9,"timestamp_ms":1793188800123,"key":"user-1","headers":[{"name":"trace","value":"abc"},{"name":"bin","value":{"base64":"/g=="}}],"body":{"base64":"/wAB"}}
+{"topic":"orders","partition":0,"seq":10,"timestamp_ms":1793188800123,"key":null,"headers":[],"body":""}
+# consume --print headers
+{"topic":"orders","partition":0,"seq":9,"timestamp_ms":1793188800123,"key":"user-1","headers":[{"name":"trace","value":"abc"},{"name":"bin","value":{"base64":"/g=="}}],"body":{"base64":"/wAB"}}
+# consume --bytes base64
+{"topic":"orders","partition":0,"seq":7,"timestamp_ms":1793188800123,"key":null,"headers":[],"body":{"base64":"cGxhaW4gdGV4dA=="}}
+# positions list
+{"cluster_id":"prod","topic":"orders","partition":0,"name":"billing","next_seq":42,"saved_at":"2026-10-28T12:00:00.123Z"}
+# config profiles
+{"current":true,"profile":"local"}
+{"current":false,"profile":"staging"}

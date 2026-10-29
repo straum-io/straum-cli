@@ -1,0 +1,30 @@
+{
+  "name": "hello_unsupported_version",
+  "description": "The broker shares no protocol version with the CLI: exit 3, nothing was sent.",
+  "cli": [
+    "ping"
+  ],
+  "exit": 3,
+  "server": [
+    {
+      "accept": true
+    },
+    {
+      "expect": {
+        "type": "Hello"
+      },
+      "reply": {
+        "type": "Error",
+        "body": {
+          "code": "UnsupportedVersion",
+          "message": "",
+          "leader_node_id": 0,
+          "leader_epoch": 0,
+          "retry_after_ms": 0,
+          "min_version": 1,
+          "max_version": 2
+        }
+      }
+    }
+  ]
+}
