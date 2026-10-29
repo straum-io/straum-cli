@@ -7,6 +7,8 @@ version may change commands, flags, exit codes and the JSON output.
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-29
+
 ### Added
 
 - A new CLI for Straum protocol version 0 on straum-go-sdk v0.1.0; the
