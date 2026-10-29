@@ -8,8 +8,34 @@ for operators, developers and scripts: results go to stdout as a table or
 as JSON lines, diagnostics to stderr, and every outcome has its own exit
 code.
 
-Straum is experimental and not production-ready, and so is this CLI. No
-release has been published yet.
+Straum is experimental and not production-ready, and so is this CLI.
+Current release: [v0.1.0](https://github.com/straum-io/straum-cli/releases/tag/v0.1.0).
+
+## Install
+
+Download the archive for your platform from the
+[v0.1.0 release](https://github.com/straum-io/straum-cli/releases/tag/v0.1.0)
+(Linux, macOS and Windows; amd64 and arm64), check it against
+`checksums.txt`, and put `straum-cli` on your `PATH`:
+
+```bash
+curl -fLO https://github.com/straum-io/straum-cli/releases/download/v0.1.0/straum-cli_0.1.0_linux_amd64.tar.gz
+curl -fLO https://github.com/straum-io/straum-cli/releases/download/v0.1.0/checksums.txt
+sha256sum --ignore-missing -c checksums.txt     # macOS: shasum -a 256 --ignore-missing -c checksums.txt
+tar xzf straum-cli_0.1.0_linux_amd64.tar.gz straum-cli
+```
+
+The archives carry build provenance:
+`gh attestation verify straum-cli_0.1.0_linux_amd64.tar.gz -R straum-io/straum-cli`.
+
+Or build it with Go 1.26.5 or later:
+
+```bash
+go install github.com/straum-io/straum-cli@v0.1.0
+```
+
+A `go install` build reports `straum-cli dev` from `straum-cli version`; the
+release archives report the version and commit.
 
 ## Quick start
 
@@ -22,12 +48,10 @@ cargo run --release -p straum-broker -- \
     --data-dir /tmp/straum-data --cluster-id dev --node-id 1 --listen 127.0.0.1:7171
 ```
 
-In another terminal, install the CLI (Go 1.26.5 or later) and use it. The
-default broker address is `127.0.0.1:7171`.
+In another terminal, with the CLI installed (above), use it. The default
+broker address is `127.0.0.1:7171`.
 
 ```bash
-go install github.com/straum-io/straum-cli@main
-
 straum-cli ping
 straum-cli topic create orders
 straum-cli produce orders 'first order' 'second order' --key customer-7
